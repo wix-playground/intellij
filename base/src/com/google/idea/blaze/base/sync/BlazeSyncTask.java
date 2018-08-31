@@ -73,6 +73,7 @@ import com.google.idea.blaze.base.scope.scopes.TimingScopeListener.TimedEvent;
 import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BlazeImportSettings;
 import com.google.idea.blaze.base.settings.BlazeUserSettings;
+import com.google.idea.blaze.base.settings.BlazeUserSettings.FocusBehavior;
 import com.google.idea.blaze.base.sync.BlazeSyncParams.SyncMode;
 import com.google.idea.blaze.base.sync.BlazeSyncPlugin.ModuleEditor;
 import com.google.idea.blaze.base.sync.SyncListener.SyncResult;
@@ -177,21 +178,27 @@ final class BlazeSyncTask implements Progressive {
           context.push(new ProgressIndicatorScope(indicator));
 
           BlazeUserSettings userSettings = BlazeUserSettings.getInstance();
-          if (!syncParams.backgroundSync) {
-            context
-                .push(
-                    new BlazeConsoleScope.Builder(project, indicator)
-                        .setPopupBehavior(userSettings.getShowBlazeConsoleOnSync())
-                        .addConsoleFilters(
-                            new IssueOutputFilter(project, workspaceRoot, ContextType.Sync, true))
-                        .build())
-                .push(new IssuesScope(project, userSettings.getShowProblemsViewOnSync()))
-                .push(new IdeaLogScope());
-            if (syncParams.syncMode != SyncMode.NO_BUILD) {
-              context.push(
-                  new NotificationScope(
-                      project, "Sync", "Sync project", "Sync successful", "Sync failed"));
-            }
+          context
+              .push(
+                  new BlazeConsoleScope.Builder(project, indicator)
+                      .setPopupBehavior(
+                          syncParams.backgroundSync
+                              ? FocusBehavior.NEVER
+                              : userSettings.getShowBlazeConsoleOnSync())
+                      .addConsoleFilters(
+                          new IssueOutputFilter(project, workspaceRoot, ContextType.Sync, true))
+                      .build())
+              .push(
+                  new IssuesScope(
+                      project,
+                      syncParams.backgroundSync
+                          ? FocusBehavior.NEVER
+                          : userSettings.getShowProblemsViewOnSync()))
+              .push(new IdeaLogScope());
+          if (!syncParams.backgroundSync && syncParams.syncMode != SyncMode.NO_BUILD) {
+            context.push(
+                new NotificationScope(
+                    project, "Sync", "Sync project", "Sync successful", "Sync failed"));
           }
 
           context.output(new StatusOutput(String.format("Syncing project: %s...", syncParams)));
@@ -429,6 +436,7 @@ final class BlazeSyncTask implements Progressive {
             project,
             context,
             projectViewSet,
+            blazeInfo,
             blazeVersionData,
             configHandler,
             shardedTargets,
@@ -464,6 +472,7 @@ final class BlazeSyncTask implements Progressive {
             context,
             workspaceRoot,
             projectViewSet,
+            blazeInfo,
             blazeVersionData,
             workspaceLanguageSettings,
             shardedTargets);
@@ -669,15 +678,11 @@ final class BlazeSyncTask implements Progressive {
   private void printWorkingSet(BlazeContext context, WorkingSet workingSet) {
     List<String> messages = Lists.newArrayList();
     messages.addAll(
-        workingSet
-            .addedFiles
-            .stream()
+        workingSet.addedFiles.stream()
             .map(file -> file.relativePath() + " (added)")
             .collect(Collectors.toList()));
     messages.addAll(
-        workingSet
-            .modifiedFiles
-            .stream()
+        workingSet.modifiedFiles.stream()
             .map(file -> file.relativePath() + " (modified)")
             .collect(Collectors.toList()));
     Collections.sort(messages);
@@ -731,6 +736,7 @@ final class BlazeSyncTask implements Progressive {
       Project project,
       BlazeContext parentContext,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       BlazeVersionData blazeVersionData,
       BlazeConfigurationHandler configHandler,
       ShardedTargetList shardedTargets,
@@ -753,6 +759,7 @@ final class BlazeSyncTask implements Progressive {
               context,
               workspaceRoot,
               projectViewSet,
+              blazeInfo,
               blazeVersionData,
               configHandler,
               shardedTargets,
@@ -769,6 +776,7 @@ final class BlazeSyncTask implements Progressive {
       BlazeContext parentContext,
       WorkspaceRoot workspaceRoot,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       BlazeVersionData blazeVersionData,
       WorkspaceLanguageSettings workspaceLanguageSettings,
       ShardedTargetList shardedTargets) {
@@ -791,6 +799,7 @@ final class BlazeSyncTask implements Progressive {
               context,
               workspaceRoot,
               projectViewSet,
+              blazeInfo,
               blazeVersionData,
               workspaceLanguageSettings,
               shardedTargets);
@@ -1007,8 +1016,7 @@ final class BlazeSyncTask implements Progressive {
   private SyncStats buildStats(SyncStats.Builder stats) {
     synchronized (this) {
       long blazeExecTime =
-          timedEvents
-              .stream()
+          timedEvents.stream()
               .filter(e -> e.isLeafEvent && e.type == EventType.BlazeInvocation)
               .mapToLong(e -> e.durationMillis)
               .sum();

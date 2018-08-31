@@ -59,6 +59,7 @@ import com.google.idea.blaze.base.projectview.section.sections.DirectorySection;
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.ErrorCollector;
 import com.google.idea.blaze.base.scope.output.IssueOutput;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BlazeImportSettings;
 import com.google.idea.blaze.base.settings.BlazeImportSettingsManager;
 import com.google.idea.blaze.base.settings.BuildSystem;
@@ -162,10 +163,11 @@ public class BlazeAndroidWorkspaceImporterTest extends BlazeTestCase {
   private BlazeAndroidImportResult importWorkspace(
       WorkspaceRoot workspaceRoot, TargetMapBuilder targetMapBuilder, ProjectView projectView) {
 
+    BuildSystem buildSystem = Blaze.getBuildSystem(project);
     ProjectViewSet projectViewSet = ProjectViewSet.builder().add(projectView).build();
     TargetMap targetMap = targetMapBuilder.build();
     JavaSourceFilter sourceFilter =
-        new JavaSourceFilter(project, workspaceRoot, projectViewSet, targetMap);
+        new JavaSourceFilter(buildSystem, workspaceRoot, projectViewSet, targetMap);
     BlazeAndroidWorkspaceImporter workspaceImporter =
         new BlazeAndroidWorkspaceImporter(
             project,
@@ -182,10 +184,11 @@ public class BlazeAndroidWorkspaceImporterTest extends BlazeTestCase {
   private BlazeJavaImportResult importJavaWorkspace(
       WorkspaceRoot workspaceRoot, TargetMapBuilder targetMapBuilder, ProjectView projectView) {
 
+    BuildSystem buildSystem = Blaze.getBuildSystem(project);
     ProjectViewSet projectViewSet = ProjectViewSet.builder().add(projectView).build();
     TargetMap targetMap = targetMapBuilder.build();
     JavaSourceFilter sourceFilter =
-        new JavaSourceFilter(project, workspaceRoot, projectViewSet, targetMap);
+        new JavaSourceFilter(buildSystem, workspaceRoot, projectViewSet, targetMap);
     BlazeJavaWorkspaceImporter blazeWorkspaceImporter =
         new BlazeJavaWorkspaceImporter(
             project,

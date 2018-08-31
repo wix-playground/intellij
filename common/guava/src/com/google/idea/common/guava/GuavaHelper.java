@@ -18,9 +18,11 @@ package com.google.idea.common.guava;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -83,6 +85,20 @@ public final class GuavaHelper {
     return one.addAll(two.build());
   }
 
+  /**
+   * Replaces {@code ImmutableSetMultimap#toImmutableSetMultimap}, which isn't available until Guava
+   * 21.
+   */
+  public static <T, K, V> Collector<T, ?, ImmutableSetMultimap<K, V>> toImmutableSetMultimap(
+      Function<? super T, ? extends K> keyFunction,
+      Function<? super T, ? extends V> valueFunction) {
+    return Collector.of(
+        ImmutableSetMultimap::<K, V>builder,
+        (builder, t) -> builder.put(keyFunction.apply(t), valueFunction.apply(t)),
+        GuavaHelper::combineSetMultimap,
+        ImmutableSetMultimap.Builder::build);
+  }
+
   private static <T> ImmutableList.Builder<T> combineList(
       ImmutableList.Builder<T> one, ImmutableList.Builder<T> two) {
     return one.addAll(two.build());
@@ -91,6 +107,14 @@ public final class GuavaHelper {
   private static <K, V> ImmutableMap.Builder<K, V> combineMap(
       ImmutableMap.Builder<K, V> one, ImmutableMap.Builder<K, V> two) {
     return one.putAll(two.build());
+  }
+
+  private static <K, V> ImmutableSetMultimap.Builder<K, V> combineSetMultimap(
+      ImmutableSetMultimap.Builder<K, V> one, ImmutableSetMultimap.Builder<K, V> two) {
+    for (Map.Entry<K, Collection<V>> entry : two.build().asMap().entrySet()) {
+      one.putAll(entry.getKey(), entry.getValue());
+    }
+    return one;
   }
 
   /** Replaces {@code Streams::stream} in Guava 21, or {@code Optional::stream} in Java 9. */

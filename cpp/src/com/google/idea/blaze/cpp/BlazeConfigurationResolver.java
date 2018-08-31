@@ -284,15 +284,13 @@ final class BlazeConfigurationResolver {
               context.push(new TimingScope("Build C configuration map", EventType.Other));
 
               ProjectViewTargetImportFilter filter =
-                  new ProjectViewTargetImportFilter(project, workspaceRoot, projectViewSet);
+                  new ProjectViewTargetImportFilter(
+                      Blaze.getBuildSystem(project), workspaceRoot, projectViewSet);
 
               ConcurrentMap<TargetKey, BlazeResolveConfigurationData> targetToData =
                   Maps.newConcurrentMap();
               List<ListenableFuture<?>> targetToDataFutures =
-                  blazeProjectData
-                      .targetMap
-                      .targets()
-                      .stream()
+                  blazeProjectData.targetMap.targets().stream()
                       .filter(target -> target.kind.languageClass == LanguageClass.C)
                       .filter(target -> target.kind != Kind.CC_TOOLCHAIN)
                       .filter(filter::isSourceTarget)
@@ -326,12 +324,7 @@ final class BlazeConfigurationResolver {
                 logger.error("Could not build C resolve configurations", e);
                 return;
               }
-              findEquivalenceClasses(
-                  context,
-                  project,
-                  targetToData,
-                  oldConfigurationData,
-                  builder);
+              findEquivalenceClasses(context, project, targetToData, oldConfigurationData, builder);
             });
   }
 

@@ -16,6 +16,7 @@
 package com.google.idea.blaze.android.run.testrecorder;
 
 import com.google.idea.blaze.base.run.BlazeCommandRunConfiguration;
+import com.google.idea.sdkcompat.run.RunManagerCompatUtils;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jdom.Element;
 
@@ -36,5 +37,9 @@ public class TestRecorderBlazeCommandRunConfiguration extends BlazeCommandRunCon
     } catch (Exception e) {
       LOGGER.error(e);
     }
+
+    // Set before run tasks explicitly as they are not written out externally.
+    RunManagerCompatUtils.setBeforeRunTasks(
+        this, RunManagerCompatUtils.getBeforeRunTasks(baseConfiguration));
   }
 }

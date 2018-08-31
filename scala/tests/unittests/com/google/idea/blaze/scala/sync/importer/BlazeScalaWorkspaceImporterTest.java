@@ -41,6 +41,7 @@ import com.google.idea.blaze.base.projectview.section.sections.DirectorySection;
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.ErrorCollector;
 import com.google.idea.blaze.base.scope.output.IssueOutput;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BlazeImportSettings;
 import com.google.idea.blaze.base.settings.BlazeImportSettingsManager;
 import com.google.idea.blaze.base.settings.BuildSystem;
@@ -637,7 +638,8 @@ public class BlazeScalaWorkspaceImporterTest extends BlazeTestCase {
             WorkspaceType.JAVA,
             ImmutableSet.of(LanguageClass.GENERIC, LanguageClass.SCALA, LanguageClass.JAVA));
     JavaSourceFilter sourceFilter =
-        new JavaSourceFilter(project, workspaceRoot, projectViewSet, targetMap);
+        new JavaSourceFilter(
+            Blaze.getBuildSystem(project), workspaceRoot, projectViewSet, targetMap);
     JdepsMap jdepsMap = key -> ImmutableList.of();
     ArtifactLocationDecoder decoder = location -> new File(location.getRelativePath());
     return new BlazeJavaWorkspaceImporter(

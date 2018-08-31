@@ -25,6 +25,7 @@ import com.google.idea.blaze.base.model.primitives.Kind;
 import com.google.idea.blaze.base.model.primitives.LanguageClass;
 import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.projectview.ProjectViewSet;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.sync.projectview.ProjectViewTargetImportFilter;
 import com.google.idea.blaze.base.targetmaps.TransitiveDependencyMap;
 import com.google.idea.blaze.java.sync.importer.JavaSourceFilter;
@@ -56,7 +57,8 @@ public final class BlazeScalaWorkspaceImporter {
 
   public BlazeScalaImportResult importWorkspace() {
     ProjectViewTargetImportFilter importFilter =
-        new ProjectViewTargetImportFilter(project, workspaceRoot, projectViewSet);
+        new ProjectViewTargetImportFilter(
+            Blaze.getBuildSystem(project), workspaceRoot, projectViewSet);
 
     Collection<Kind> scalaKinds = Kind.allKindsForLanguage(LanguageClass.SCALA);
     List<TargetKey> scalaSourceTargets =

@@ -73,6 +73,7 @@ public class BlazeSyncManager {
                 BlazeSyncParams params =
                     new BlazeSyncParams.Builder(
                             "Initial directory update", BlazeSyncParams.SyncMode.NO_BUILD)
+                        .setBackgroundSync(true)
                         .build();
                 submitTask(new BlazeSyncTask(project, importSettings, params));
               }
@@ -95,8 +96,9 @@ public class BlazeSyncManager {
         return false;
       case FULL:
       case INCREMENTAL:
-      case PARTIAL:
         return true;
+      case PARTIAL:
+        return !syncParams.backgroundSync;
     }
     throw new AssertionError("Unhandled syncMode: " + syncParams.syncMode);
   }

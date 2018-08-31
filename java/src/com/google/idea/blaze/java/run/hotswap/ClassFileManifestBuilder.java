@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.idea.blaze.base.command.BlazeInvocationContext;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper;
+import com.google.idea.blaze.base.command.buildresult.BuildResultHelper.GetArtifactsException;
+import com.google.idea.blaze.base.command.buildresult.BuildResultHelperProvider;
 import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.google.idea.blaze.base.run.BlazeBeforeRunCommandHelper;
 import com.google.idea.blaze.base.run.BlazeCommandRunConfiguration;
@@ -88,7 +90,8 @@ public class ClassFileManifestBuilder {
       return null;
     }
 
-    try (BuildResultHelper buildResultHelper = BuildResultHelper.forFiles(file -> true)) {
+    try (BuildResultHelper buildResultHelper =
+        BuildResultHelperProvider.forFiles(project, file -> true)) {
 
       ListenableFuture<BuildResult> buildOperation =
           BlazeBeforeRunCommandHelper.runBlazeBuild(
@@ -115,13 +118,18 @@ public class ClassFileManifestBuilder {
       } catch (java.util.concurrent.ExecutionException e) {
         throw new ExecutionException(e);
       }
-      ImmutableList<File> jars =
-          buildResultHelper
-              .getArtifactsForOutputGroups(
-                  ImmutableSet.of(JavaClasspathAspectStrategy.OUTPUT_GROUP))
-              .stream()
-              .filter(f -> f.getName().endsWith(".jar"))
-              .collect(toImmutableList());
+      ImmutableList<File> jars;
+      try {
+        jars =
+            buildResultHelper
+                .getArtifactsForOutputGroups(
+                    ImmutableSet.of(JavaClasspathAspectStrategy.OUTPUT_GROUP))
+                .stream()
+                .filter(f -> f.getName().endsWith(".jar"))
+                .collect(toImmutableList());
+      } catch (GetArtifactsException e) {
+        throw new ExecutionException("Failed to get debug binary: " + e.getMessage());
+      }
       ClassFileManifest oldManifest = getManifest(env);
       ClassFileManifest newManifest = ClassFileManifest.build(jars, oldManifest);
       env.getCopyableUserData(MANIFEST_KEY).set(newManifest);

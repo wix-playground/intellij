@@ -11,7 +11,7 @@ load(
     "intellij_integration_test_suite",
     "intellij_unit_test_suite",
 )
-load("//intellij_platform_sdk:build_defs.bzl", "select_for_plugin_api")
+load("//intellij_platform_sdk:build_defs.bzl", "select_for_plugin_api", "select_for_ide")
 
 java_library(
     name = "cpp",
@@ -39,12 +39,28 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+java_library(
+    name = "unit_test_utils",
+    testonly = 1,
+    srcs = glob(["tests/utils/**/*.java"]),
+    deps = [
+        "//intellij_platform_sdk:jsr305",
+        "//intellij_platform_sdk:plugin_api",
+        "@junit//jar",
+    ],
+)
+
 intellij_unit_test_suite(
     name = "unit_tests",
     srcs = glob(["tests/unittests/**/*.java"]),
+    class_rules = select_for_ide(
+        clion = ["com.google.idea.blaze.cpp.ClionUnitTestSystemPropertiesRule"],
+        default = [],
+    ),
     test_package_root = "com.google.idea.blaze.cpp",
     deps = [
         ":cpp",
+        ":unit_test_utils",
         "//base",
         "//base:unit_test_utils",
         "//common/experiments",

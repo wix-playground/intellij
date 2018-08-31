@@ -39,7 +39,10 @@ import com.google.idea.blaze.base.command.BlazeCommandName;
 import com.google.idea.blaze.base.command.BlazeFlags;
 import com.google.idea.blaze.base.command.BlazeInvocationContext;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper;
+import com.google.idea.blaze.base.command.buildresult.BuildResultHelper.GetArtifactsException;
+import com.google.idea.blaze.base.command.buildresult.BuildResultHelperProvider;
 import com.google.idea.blaze.base.command.info.BlazeConfigurationHandler;
+import com.google.idea.blaze.base.command.info.BlazeInfo;
 import com.google.idea.blaze.base.console.BlazeConsoleLineProcessorProvider;
 import com.google.idea.blaze.base.filecache.FileDiffer;
 import com.google.idea.blaze.base.ideinfo.TargetIdeInfo;
@@ -65,7 +68,6 @@ import com.google.idea.blaze.base.scope.output.PrintOutput;
 import com.google.idea.blaze.base.scope.scopes.TimingScope;
 import com.google.idea.blaze.base.scope.scopes.TimingScope.EventType;
 import com.google.idea.blaze.base.settings.Blaze;
-import com.google.idea.blaze.base.settings.BuildSystem;
 import com.google.idea.blaze.base.sync.aspects.BuildResult.Status;
 import com.google.idea.blaze.base.sync.aspects.strategy.AspectStrategy;
 import com.google.idea.blaze.base.sync.aspects.strategy.AspectStrategy.OutputGroup;
@@ -115,6 +117,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       BlazeContext context,
       WorkspaceRoot workspaceRoot,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       BlazeVersionData blazeVersionData,
       BlazeConfigurationHandler configHandler,
       ShardedTargetList shardedTargets,
@@ -145,6 +148,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
             context,
             workspaceRoot,
             projectViewSet,
+            blazeInfo,
             workspaceLanguageSettings.activeLanguages,
             shardedTargets,
             aspectStrategy);
@@ -229,6 +233,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       BlazeContext parentContext,
       WorkspaceRoot workspaceRoot,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       ImmutableSet<LanguageClass> activeLanguages,
       ShardedTargetList shardedTargets,
       AspectStrategy aspectStrategy) {
@@ -253,6 +258,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
                         context,
                         workspaceRoot,
                         projectViewSet,
+                        blazeInfo,
                         activeLanguages,
                         targets,
                         aspectStrategy);
@@ -271,11 +277,13 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       BlazeContext context,
       WorkspaceRoot workspaceRoot,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       ImmutableSet<LanguageClass> activeLanguages,
       List<TargetExpression> targets,
       AspectStrategy aspectStrategy) {
     try (BuildResultHelper buildResultHelper =
-        BuildResultHelper.forFiles(aspectStrategy.getAspectOutputFilePredicate())) {
+        BuildResultHelperProvider.forFilesForSync(
+            project, blazeInfo, aspectStrategy.getAspectOutputFilePredicate())) {
 
       BlazeCommand.Builder builder =
           BlazeCommand.builder(getBinaryPath(project), BlazeCommandName.BUILD)
@@ -305,7 +313,17 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       if (buildResult.status == Status.FATAL_ERROR) {
         return new IdeInfoResult(ImmutableList.of(), buildResult);
       }
-      return new IdeInfoResult(buildResultHelper.getBuildArtifacts(), buildResult);
+      return Scope.push(
+          context,
+          childContext -> {
+            try {
+              childContext.push(new TimingScope("IdeInfoBuildArtifacts", EventType.Other));
+              return new IdeInfoResult(buildResultHelper.getBuildArtifacts(), buildResult);
+            } catch (GetArtifactsException e) {
+              IssueOutput.error("Failed to get ide-info files: " + e.getMessage()).submit(context);
+              return new IdeInfoResult(ImmutableList.of(), buildResult);
+            }
+          });
     }
   }
 
@@ -514,18 +532,27 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       BlazeContext context,
       WorkspaceRoot workspaceRoot,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       BlazeVersionData blazeVersionData,
       WorkspaceLanguageSettings workspaceLanguageSettings,
       ShardedTargetList shardedTargets) {
-    return resolveIdeArtifacts(
-        project,
-        context,
-        workspaceRoot,
-        projectViewSet,
-        blazeVersionData,
-        workspaceLanguageSettings,
-        shardedTargets,
-        false);
+    Function<Integer, String> progressMessage =
+        count ->
+            String.format(
+                "Building IDE resolve files for shard %s of %s...",
+                count, shardedTargets.shardedTargets.size());
+    Function<List<TargetExpression>, BuildResult> invocation =
+        targets ->
+            doResolveIdeArtifacts(
+                project,
+                context,
+                workspaceRoot,
+                projectViewSet,
+                blazeInfo,
+                blazeVersionData,
+                workspaceLanguageSettings,
+                targets);
+    return shardedTargets.runShardedCommand(project, context, progressMessage, invocation);
   }
 
   @Override
@@ -537,33 +564,6 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       BlazeVersionData blazeVersionData,
       WorkspaceLanguageSettings workspaceLanguageSettings,
       ShardedTargetList shardedTargets) {
-    boolean ideCompile = hasIdeCompileOutputGroup(blazeVersionData);
-    return resolveIdeArtifacts(
-        project,
-        context,
-        workspaceRoot,
-        projectViewSet,
-        blazeVersionData,
-        workspaceLanguageSettings,
-        shardedTargets,
-        ideCompile);
-  }
-
-  private static boolean hasIdeCompileOutputGroup(BlazeVersionData blazeVersionData) {
-    return blazeVersionData.buildSystem() == BuildSystem.Blaze
-        || blazeVersionData.bazelIsAtLeastVersion(0, 4, 4);
-  }
-
-  private static BuildResult resolveIdeArtifacts(
-      Project project,
-      BlazeContext context,
-      WorkspaceRoot workspaceRoot,
-      ProjectViewSet projectViewSet,
-      BlazeVersionData blazeVersionData,
-      WorkspaceLanguageSettings workspaceLanguageSettings,
-      ShardedTargetList shardedTargets,
-      boolean useIdeCompileOutputGroup) {
-
     Function<Integer, String> progressMessage =
         count ->
             String.format(
@@ -571,23 +571,14 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
                 count, shardedTargets.shardedTargets.size());
     Function<List<TargetExpression>, BuildResult> invocation =
         targets ->
-            useIdeCompileOutputGroup
-                ? doCompileIdeArtifacts(
-                    project,
-                    context,
-                    workspaceRoot,
-                    projectViewSet,
-                    blazeVersionData,
-                    workspaceLanguageSettings,
-                    targets)
-                : doResolveIdeArtifacts(
-                    project,
-                    context,
-                    workspaceRoot,
-                    projectViewSet,
-                    blazeVersionData,
-                    workspaceLanguageSettings,
-                    targets);
+            doCompileIdeArtifacts(
+                project,
+                context,
+                workspaceRoot,
+                projectViewSet,
+                blazeVersionData,
+                workspaceLanguageSettings,
+                targets);
     return shardedTargets.runShardedCommand(project, context, progressMessage, invocation);
   }
 
@@ -601,11 +592,12 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       BlazeContext context,
       WorkspaceRoot workspaceRoot,
       ProjectViewSet projectViewSet,
+      BlazeInfo blazeInfo,
       BlazeVersionData blazeVersionData,
       WorkspaceLanguageSettings workspaceLanguageSettings,
       List<TargetExpression> targets) {
     try (BuildResultHelper buildResultHelper =
-        BuildResultHelper.forFiles(getGenfilePrefetchFilter())) {
+        BuildResultHelperProvider.forFilesForSync(project, blazeInfo, getGenfilePrefetchFilter())) {
 
       BlazeCommand.Builder blazeCommandBuilder =
           BlazeCommand.builder(getBinaryPath(project), BlazeCommandName.BUILD)
@@ -637,7 +629,17 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
 
       BuildResult result = BuildResult.fromExitCode(retVal);
       if (result.status != BuildResult.Status.FATAL_ERROR) {
-        prefetchGenfiles(context, buildResultHelper.getBuildArtifacts());
+        Scope.push(
+            context,
+            childContext -> {
+              childContext.push(new TimingScope("GenfilesPrefetchBuildArtifacts", EventType.Other));
+              try {
+                prefetchGenfiles(context, buildResultHelper.getBuildArtifacts());
+              } catch (GetArtifactsException e) {
+                IssueOutput.warn("Failed to get genfiles to prefetch: " + e.getMessage())
+                    .submit(context);
+              }
+            });
       }
       return result;
     }

@@ -35,6 +35,8 @@ import com.google.idea.blaze.base.command.BlazeCommandName;
 import com.google.idea.blaze.base.command.BlazeFlags;
 import com.google.idea.blaze.base.command.BlazeInvocationContext;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper;
+import com.google.idea.blaze.base.command.buildresult.BuildResultHelper.GetArtifactsException;
+import com.google.idea.blaze.base.command.buildresult.BuildResultHelperProvider;
 import com.google.idea.blaze.base.console.BlazeConsoleLineProcessorProvider;
 import com.google.idea.blaze.base.issueparser.IssueOutputFilter;
 import com.google.idea.blaze.base.model.primitives.Kind;
@@ -257,9 +259,7 @@ final class FastBuildServiceImpl implements FastBuildService {
   }
 
   private void addAllModifiedPaths(Set<File> modifiedPaths) {
-    changeListManager
-        .getAllChanges()
-        .stream()
+    changeListManager.getAllChanges().stream()
         .flatMap(change -> Stream.of(change.getBeforeRevision(), change.getAfterRevision()))
         .filter(Objects::nonNull)
         .map(ContentRevision::getFile)
@@ -302,8 +302,10 @@ final class FastBuildServiceImpl implements FastBuildService {
     FastBuildAspectStrategy aspectStrategy =
         FastBuildAspectStrategyProvider.findAspectStrategy(
             projectDataManager.getBlazeProjectData().blazeVersionData);
+    @SuppressWarnings("MustBeClosedChecker") // close buildResultHelper manually via a listener
     BuildResultHelper buildResultHelper =
-        BuildResultHelper.forFiles(
+        BuildResultHelperProvider.forFiles(
+            project,
             file ->
                 file.endsWith(deployJarLabel.targetName().toString())
                     || aspectStrategy.getAspectOutputFilePredicate().test(file));
@@ -368,21 +370,24 @@ final class FastBuildServiceImpl implements FastBuildService {
               if (result.status != Status.SUCCESS) {
                 throw new RuntimeException("Blaze failure building deploy jar");
               }
-              ImmutableList<File> deployJarArtifacts =
-                  buildResultHelper.getBuildArtifactsForTarget(deployJarLabel);
-              checkState(deployJarArtifacts.size() == 1);
-              File deployJar = deployJarArtifacts.get(0);
+              try {
+                ImmutableList<File> deployJarArtifacts =
+                    buildResultHelper.getBuildArtifactsForTarget(deployJarLabel);
+                checkState(deployJarArtifacts.size() == 1);
+                File deployJar = deployJarArtifacts.get(0);
 
-              ImmutableList<File> ideInfoFiles =
-                  buildResultHelper.getArtifactsForOutputGroups(
-                      ImmutableSet.of(aspectStrategy.getAspectOutputGroup()));
+                ImmutableList<File> ideInfoFiles =
+                    buildResultHelper.getArtifactsForOutputGroups(
+                        ImmutableSet.of(aspectStrategy.getAspectOutputGroup()));
 
-              ImmutableMap<Label, FastBuildBlazeData> blazeData =
-                  ideInfoFiles
-                      .stream()
-                      .map(aspectStrategy::readFastBuildBlazeData)
-                      .collect(toImmutableMap(FastBuildBlazeData::label, i -> i));
-              return BuildOutput.create(deployJar, blazeData);
+                ImmutableMap<Label, FastBuildBlazeData> blazeData =
+                    ideInfoFiles.stream()
+                        .map(aspectStrategy::readFastBuildBlazeData)
+                        .collect(toImmutableMap(FastBuildBlazeData::label, i -> i));
+                return BuildOutput.create(deployJar, blazeData);
+              } catch (GetArtifactsException e) {
+                throw new RuntimeException("Blaze failure building deploy jar: " + e.getMessage());
+              }
             },
             ConcurrencyUtil.getAppExecutorService());
     buildOutputFuture.addListener(

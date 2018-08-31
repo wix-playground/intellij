@@ -56,6 +56,7 @@ import com.google.idea.blaze.base.projectview.section.sections.TestSourceSection
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.ErrorCollector;
 import com.google.idea.blaze.base.scope.output.IssueOutput;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BlazeImportSettings;
 import com.google.idea.blaze.base.settings.BlazeImportSettingsManager;
 import com.google.idea.blaze.base.settings.BuildSystem;
@@ -156,7 +157,8 @@ public class BlazeJavaWorkspaceImporterTest extends BlazeTestCase {
 
     TargetMap targetMap = targetMapBuilder.build();
     JavaSourceFilter sourceFilter =
-        new JavaSourceFilter(project, workspaceRoot, projectViewSet, targetMap);
+        new JavaSourceFilter(
+            Blaze.getBuildSystem(project), workspaceRoot, projectViewSet, targetMap);
     BlazeJavaWorkspaceImporter blazeWorkspaceImporter =
         new BlazeJavaWorkspaceImporter(
             project,

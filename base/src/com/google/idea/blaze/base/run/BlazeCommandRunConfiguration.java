@@ -89,8 +89,8 @@ public class BlazeCommandRunConfiguration extends LocatableConfigurationBase
    * Attributes or tags which are common to all run configuration types. We don't want to interfere
    * with the (de)serialization of these.
    *
-   * <p>TODO(brendandouglas): remove once we are fully migrated to serializing blaze-specific
-   * settings under a common parent.
+   * <p>This is here for backwards compatibility deserializing older-style run configurations
+   * without the top-level BLAZE_SETTINGS_TAG element.
    */
   private static final ImmutableSet<String> COMMON_SETTINGS =
       ImmutableSet.of(

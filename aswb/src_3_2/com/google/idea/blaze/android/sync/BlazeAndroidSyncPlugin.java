@@ -45,6 +45,7 @@ import com.google.idea.blaze.base.scope.output.IssueOutput;
 import com.google.idea.blaze.base.scope.output.StatusOutput;
 import com.google.idea.blaze.base.scope.scopes.TimingScope;
 import com.google.idea.blaze.base.scope.scopes.TimingScope.EventType;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.sync.BlazeSyncParams.SyncMode;
 import com.google.idea.blaze.base.sync.BlazeSyncPlugin;
 import com.google.idea.blaze.base.sync.SourceFolderProvider;
@@ -153,7 +154,8 @@ public class BlazeAndroidSyncPlugin implements BlazeSyncPlugin {
         AndroidSdkFromProjectView.getAndroidSdkPlatform(context, projectViewSet);
 
     JavaSourceFilter sourceFilter =
-        new JavaSourceFilter(project, workspaceRoot, projectViewSet, targetMap);
+        new JavaSourceFilter(
+            Blaze.getBuildSystem(project), workspaceRoot, projectViewSet, targetMap);
 
     BlazeAndroidWorkspaceImporter workspaceImporter =
         new BlazeAndroidWorkspaceImporter(

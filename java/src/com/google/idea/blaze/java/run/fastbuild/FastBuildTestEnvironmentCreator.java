@@ -56,6 +56,7 @@ final class FastBuildTestEnvironmentCreator {
   private static final String OUTPUT_FILE_VARIABLE = "XML_OUTPUT_FILE";
   private static final String RUNFILES_DIR_VARIABLE = "TEST_SRCDIR";
   private static final String TARGET_VARIABLE = "TEST_TARGET";
+  private static final String TEMP_DIRECTORY_VARIABLE = "TEST_TMPDIR";
   private static final String TEST_FILTER_VARIABLE = "TESTBRIDGE_TEST_ONLY";
   private static final String WORKSPACE_VARIABLE = "TEST_WORKSPACE";
 
@@ -128,6 +129,11 @@ final class FastBuildTestEnvironmentCreator {
         .withEnvironment(RUNFILES_DIR_VARIABLE, runfilesDir.toString())
         .withEnvironment(TARGET_VARIABLE, fastBuildInfo.label().toString())
         .withEnvironment(WORKSPACE_VARIABLE, workspaceName);
+
+    String tmpdir = System.getProperty("java.io.tmpdir");
+    if (tmpdir != null) {
+      commandLine.withEnvironment(TEMP_DIRECTORY_VARIABLE, tmpdir);
+    }
 
     if (testFilter != null) {
       commandLine.withEnvironment(TEST_FILTER_VARIABLE, testFilter);

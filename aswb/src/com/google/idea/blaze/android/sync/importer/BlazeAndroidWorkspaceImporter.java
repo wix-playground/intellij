@@ -42,6 +42,7 @@ import com.google.idea.blaze.base.projectview.ProjectViewSet;
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.output.IssueOutput;
 import com.google.idea.blaze.base.scope.output.PerformanceWarning;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.sync.projectview.ProjectViewTargetImportFilter;
 import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
 import com.google.idea.blaze.java.sync.importer.JavaSourceFilter;
@@ -77,7 +78,9 @@ public final class BlazeAndroidWorkspaceImporter {
       ArtifactLocationDecoder artifactLocationDecoder) {
     this.context = context;
     this.targetMap = targetMap;
-    this.importFilter = new ProjectViewTargetImportFilter(project, workspaceRoot, projectViewSet);
+    this.importFilter =
+        new ProjectViewTargetImportFilter(
+            Blaze.getBuildSystem(project), workspaceRoot, projectViewSet);
     this.projectViewSet = projectViewSet;
     this.sourceFilter = sourceFilter;
     this.artifactLocationDecoder = artifactLocationDecoder;

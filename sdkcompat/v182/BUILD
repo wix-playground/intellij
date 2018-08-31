@@ -17,9 +17,16 @@ java_library(
         "com/google/idea/sdkcompat/ui/**",
         "com/google/idea/sdkcompat/vcs/**",
     ]) + select_for_ide(
+        android_studio = glob([
+            "com/google/idea/sdkcompat/cidr/**",
+            "com/google/idea/sdkcompat/java/**",
+            "com/google/idea/sdkcompat/kotlin/**",
+            "studio/com/google/idea/sdkcompat/cidr/**",
+        ]),
         clion = glob([
             "com/google/idea/sdkcompat/clion/**",
             "com/google/idea/sdkcompat/cidr/**",
+            "clion/com/google/idea/sdkcompat/cidr/**",
         ]),
         intellij = glob([
             "com/google/idea/sdkcompat/java/**",

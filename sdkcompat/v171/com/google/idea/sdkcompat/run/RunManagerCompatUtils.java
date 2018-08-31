@@ -44,4 +44,14 @@ public class RunManagerCompatUtils {
   public static List<BeforeRunTask> getBeforeRunTasks(RunConfiguration config) {
     return RunManagerEx.getInstanceEx(config.getProject()).getBeforeRunTasks(config);
   }
+
+  /**
+   * Set before-run tasks associated with this run configuration.
+   *
+   * <p>#api171 remove post 171.
+   */
+  @SuppressWarnings("rawtypes")
+  public static void setBeforeRunTasks(RunConfiguration config, List<BeforeRunTask> tasks) {
+    RunManagerEx.getInstanceEx(config.getProject()).setBeforeRunTasks(config, tasks, true);
+  }
 }

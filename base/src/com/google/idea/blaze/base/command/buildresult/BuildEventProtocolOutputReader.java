@@ -122,7 +122,7 @@ public final class BuildEventProtocolOutputReader {
    *
    * @throws IOException if the BEP output file is incorrectly formatted
    */
-  static ImmutableList<File> parseAllOutputFilenames(
+  public static ImmutableList<File> parseAllOutputFilenames(
       InputStream inputStream, Predicate<String> fileFilter) throws IOException {
     ImmutableList.Builder<File> files = ImmutableList.builder();
     BuildEventStreamProtos.BuildEvent event;
@@ -137,7 +137,7 @@ public final class BuildEventProtocolOutputReader {
    *
    * @throws IOException if the BEP output file is incorrectly formatted
    */
-  static ImmutableList<File> parseArtifactsForTarget(
+  public static ImmutableList<File> parseArtifactsForTarget(
       InputStream inputStream, Label label, Predicate<String> fileFilter) throws IOException {
     Map<String, List<BuildEventStreamProtos.File>> fileSets = new HashMap<>();
     List<String> fileSetsForLabel = new ArrayList<>();
@@ -164,7 +164,7 @@ public final class BuildEventProtocolOutputReader {
    *
    * @throws IOException if the BEP output file is incorrectly formatted
    */
-  static ImmutableList<File> parseAllOutputGroupFilenames(
+  public static ImmutableList<File> parseAllOutputGroupFilenames(
       InputStream inputStream, Collection<String> outputGroups, Predicate<String> fileFilter)
       throws IOException {
     Map<String, BuildEventStreamProtos.NamedSetOfFiles> fileSets = new HashMap<>();

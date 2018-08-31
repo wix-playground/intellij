@@ -23,8 +23,7 @@ import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.projectview.ProjectViewSet;
 import com.google.idea.blaze.base.projectview.section.sections.ExcludeTargetSection;
 import com.google.idea.blaze.base.projectview.section.sections.ImportTargetOutputSection;
-import com.google.idea.blaze.base.settings.Blaze;
-import com.intellij.openapi.project.Project;
+import com.google.idea.blaze.base.settings.BuildSystem;
 import java.util.Set;
 
 /** Filters rules into source/library depending on the project view. */
@@ -34,11 +33,8 @@ public class ProjectViewTargetImportFilter {
   private final Set<Label> excludedTargets;
 
   public ProjectViewTargetImportFilter(
-      Project project, WorkspaceRoot workspaceRoot, ProjectViewSet projectViewSet) {
-    this.importRoots =
-        ImportRoots.builder(workspaceRoot, Blaze.getBuildSystem(project))
-            .add(projectViewSet)
-            .build();
+      BuildSystem buildSystem, WorkspaceRoot workspaceRoot, ProjectViewSet projectViewSet) {
+    this.importRoots = ImportRoots.builder(workspaceRoot, buildSystem).add(projectViewSet).build();
     this.importTargetOutputs =
         Sets.newHashSet(projectViewSet.listItems(ImportTargetOutputSection.KEY));
     this.excludedTargets = Sets.newHashSet(projectViewSet.listItems(ExcludeTargetSection.KEY));

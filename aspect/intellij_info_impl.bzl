@@ -387,9 +387,6 @@ def collect_c_toolchain_info(target, ctx, semantics, ide_info, ide_info_file, ou
         compiler_options = cpp_fragment.compiler_options(ctx.features)
         unfiltered_compiler_options = cpp_fragment.unfiltered_compiler_options(ctx.features)
 
-    if hasattr(semantics, "cc"):
-        cpp_options = semantics.cc.augment_toolchain_cxx_options(cpp_options)
-
     c_toolchain_info = struct_omit_none(
         target_name = cpp_toolchain.target_gnu_system_name,
         base_compiler_option = compiler_options,
