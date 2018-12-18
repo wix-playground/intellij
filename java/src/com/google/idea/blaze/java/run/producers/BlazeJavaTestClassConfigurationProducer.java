@@ -20,6 +20,9 @@ import com.google.idea.blaze.base.command.BlazeCommandName;
 import com.google.idea.blaze.base.command.BlazeFlags;
 import com.google.idea.blaze.base.dependencies.TargetInfo;
 import com.google.idea.blaze.base.dependencies.TestSize;
+import com.google.idea.blaze.base.projectview.ProjectViewManager;
+import com.google.idea.blaze.base.projectview.ProjectViewSet;
+import com.google.idea.blaze.base.projectview.section.sections.SingleTestFlagsSection;
 import com.google.idea.blaze.base.run.BlazeCommandRunConfiguration;
 import com.google.idea.blaze.base.run.BlazeCommandRunConfigurationType;
 import com.google.idea.blaze.base.run.BlazeConfigurationNameBuilder;
@@ -122,12 +125,7 @@ public class BlazeJavaTestClassConfigurationProducer
       return false;
     }
     handlerState.getCommandState().setCommand(BlazeCommandName.TEST);
-
-    // remove old test filter flag if present
-    List<String> flags = new ArrayList<>(handlerState.getBlazeFlagsState().getRawFlags());
-    flags.removeIf((flag) -> flag.startsWith(BlazeFlags.TEST_FILTER));
-    flags.add(BlazeFlags.TEST_FILTER + "=" + testFilter);
-    handlerState.getBlazeFlagsState().setRawFlags(flags);
+    setRunConfigurationFlags(configuration, handlerState, testFilter);
 
     String name =
         new BlazeConfigurationNameBuilder(configuration)
@@ -136,6 +134,22 @@ public class BlazeJavaTestClassConfigurationProducer
     configuration.setName(name);
     configuration.setNameChangedByUser(true); // don't revert to generated name
     return true;
+  }
+
+  private void setRunConfigurationFlags(BlazeCommandRunConfiguration configuration, BlazeCommandRunConfigurationCommonState handlerState, String testFilter) {
+    // remove old test filter flag if present
+    List<String> flags = new ArrayList<>(handlerState.getBlazeFlagsState().getRawFlags());
+    flags.removeIf((flag) -> flag.startsWith(BlazeFlags.TEST_FILTER));
+    flags.add(BlazeFlags.TEST_FILTER + "=" + testFilter);
+    addDefaultFlagsFromConfigSection(configuration, flags);
+    handlerState.getBlazeFlagsState().setRawFlags(flags);
+  }
+
+  private void addDefaultFlagsFromConfigSection(BlazeCommandRunConfiguration configuration, List<String> flags) {
+    ProjectViewSet projectViewSet = ProjectViewManager.getInstance(configuration.getProject()).getProjectViewSet();
+    if (projectViewSet != null) {
+        flags.addAll(projectViewSet.listItems(SingleTestFlagsSection.KEY));
+    }
   }
 
   @Override
