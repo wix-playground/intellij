@@ -24,6 +24,7 @@ import com.google.idea.blaze.base.model.LibraryKey;
 import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
 import com.google.idea.blaze.java.libraries.AttachedSourceJarManager;
 import com.google.idea.blaze.java.libraries.JarCache;
+import com.google.idea.common.experiments.BoolExperiment;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
@@ -33,6 +34,13 @@ import javax.annotation.concurrent.Immutable;
 /** An immutable reference to a .jar required by a rule. */
 @Immutable
 public final class BlazeJarLibrary extends BlazeLibrary {
+  private static final BoolExperiment wixForcePopulateSourcesExperiment =
+          new BoolExperiment("wix.force.populate.sources", false);
+
+  private static boolean forceFetchSources() {
+    return wixForcePopulateSourcesExperiment.getValue();
+  }
+
   public final LibraryArtifact libraryArtifact;
 
   public BlazeJarLibrary(LibraryArtifact libraryArtifact) {
@@ -66,7 +74,7 @@ public final class BlazeJarLibrary extends BlazeLibrary {
     libraryModel.addRoot(pathToUrl(jar), OrderRootType.CLASSES);
 
     AttachedSourceJarManager sourceJarManager = AttachedSourceJarManager.getInstance(project);
-    if (!sourceJarManager.hasSourceJarAttached(key)) {
+    if (!sourceJarManager.hasSourceJarAttached(key) && !forceFetchSources()) {
       return;
     }
     for (ArtifactLocation srcJar : libraryArtifact.getSourceJars()) {
