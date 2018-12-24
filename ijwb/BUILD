@@ -57,8 +57,8 @@ optional_plugin_xml(
 stamped_plugin_xml(
     name = "stamped_plugin_xml",
     changelog_file = "//:changelog",
-    plugin_id = "com.google.idea.bazel.ijwb",
-    plugin_name = "Bazel",
+    plugin_id = "com.google.idea.wix.ijwb",
+    plugin_name = "Bazel (Wix Fork)",
     plugin_xml = ":merged_plugin_xml",
     stamp_since_build = True,
     stamp_until_build = True,
