@@ -48,6 +48,10 @@
     <attachSourcesProvider implementation="com.google.idea.blaze.scala.libraries.BlazeScalaAttachSourceProvider"/>
   </extensions>
 
+  <extensions defaultExtensionNs="com.intellij">
+    <annotator language="Scala" implementationClass="com.google.idea.blaze.scala.sync.ImportIssueAnnotator"/>
+  </extensions>
+
   <project-components>
     <component>
       <implementation-class>com.google.idea.blaze.scala.run.producers.NonBlazeProducerSuppressor

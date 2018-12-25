@@ -34,12 +34,17 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowAnchor;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.pom.Navigatable;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.concurrency.SequentialTaskExecutor;
 import com.intellij.util.ui.MessageCategory;
 import com.intellij.util.ui.UIUtil;
+
+import javax.annotation.Nullable;
+import javax.swing.Icon;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,8 +56,10 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
-import javax.swing.Icon;
+import java.util.regex.Pattern;
+
+import static com.google.idea.blaze.base.ui.problems.ImportIssueResolver.isImportIssue;
+import static com.google.idea.blaze.base.ui.problems.ImportIssueType.DEPENDENCY_MISSING_IN_BUILD_FILE;
 
 /** A custom error tree view for Blaze invocation errors. */
 public class BlazeProblemsView {
@@ -81,6 +88,9 @@ public class BlazeProblemsView {
   private volatile boolean didFocusProblemsView = false;
   private volatile FocusBehavior focusBehavior;
   private volatile UUID currentSessionId = UUID.randomUUID();
+
+  private ImportProblemContainerService importProblemContainerService =
+          ServiceManager.getService(ImportProblemContainerService.class);
 
   public BlazeProblemsView(Project project, ToolWindowManager wm) {
     this.project = project;
@@ -150,6 +160,8 @@ public class BlazeProblemsView {
         getExportTextPrefix(issue),
         getRenderTextPrefix(issue));
 
+        addImportIssueIfNeeded(issue, file);
+
     if (didFocusProblemsView) {
       return;
     }
@@ -161,6 +173,16 @@ public class BlazeProblemsView {
       focusProblemsView();
     }
   }
+
+    private void addImportIssueIfNeeded(IssueOutput issue, VirtualFile file) {
+        if (isImportIssue(issue, file, project)) {
+            PsiManager psiManager = PsiManager.getInstance(project);
+            PsiFile psiFile =  psiManager.findFile(file);
+
+            importProblemContainerService.
+                    setIssue(issue, psiFile, DEPENDENCY_MISSING_IN_BUILD_FILE);
+        }
+    }
 
   /**
    * Finds the virtual file associated with the given file path, resolving symlinks where relevant.

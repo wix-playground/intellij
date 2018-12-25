@@ -97,10 +97,12 @@ import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoderImpl;
 import com.google.idea.blaze.base.sync.workspace.WorkingSet;
 import com.google.idea.blaze.base.sync.workspace.WorkspacePathResolver;
 import com.google.idea.blaze.base.sync.workspace.WorkspacePathResolverImpl;
+import com.google.idea.blaze.base.ui.problems.ImportProblemContainerService;
 import com.google.idea.blaze.base.util.SaveUtil;
 import com.google.idea.blaze.base.vcs.BlazeVcsHandler;
 import com.google.idea.common.transactions.Transactions;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
@@ -159,6 +161,8 @@ final class BlazeSyncTask implements Progressive {
             }
           }
         };
+
+    ServiceManager.getService(ImportProblemContainerService.class).resetIssues();
   }
 
   @Override
