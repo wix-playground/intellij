@@ -31,30 +31,35 @@ public class ImportProblemContainerService {
     public void setIssue(IssueOutput issue, PsiFile file, ImportIssueType importIssueType) {
         String originalLine = getOriginalLineByIssue(issue, file);
         ImportIssue importIssue = new ImportIssue(issue, file, originalLine, importIssueType);
-        Optional<String> importClassKey = getImportIssueKey(originalLine, file);
+        Optional<String> importIssueKey = getImportIssueKey(originalLine, file);
 
-        if(importClassKey.isPresent()) {
-            issues.put(importClassKey.get(), importIssue);
+        if(importIssueKey.isPresent()) {
+            issues.put(importIssueKey.get(), importIssue);
         }
 
     }
 
     @NotNull
     private Optional<String> getImportIssueKey(String originalLine, PsiFile file) {
-        return Optional.ofNullable(file).map(psiFile -> {
-            String directoryName = file.getParent().getName();
-            String packageName = getPackageName(originalLine);
-            return directoryName+"\\/"+packageName;
+        return Optional.ofNullable(file).flatMap(psiFile -> {
+            PsiDirectory parent = file.getParent();
+            if(parent != null){
+                String directoryName = parent.getName();
+                Optional<String> maybePackageName = getPackageName(originalLine);
+                return maybePackageName.map(packageName ->  directoryName+"\\/"+packageName);
+            }else {
+                return Optional.empty();
+            }
         });
     }
 
 
     public Optional<ImportIssue> findIssue(PsiElement psiElement) {
         PsiFile file = psiElement.getContainingFile();
-        Optional<String> importClass = getImportIssueKey(psiElement.getText(), file);
+        Optional<String> importIssueKey = getImportIssueKey(psiElement.getText(), file);
 
-        if(doesIssueExist(importClass)){
-            ImportIssue importIssue = issues.get(importClass.get());
+        if(doesIssueExist(importIssueKey)){
+            ImportIssue importIssue = issues.get(importIssueKey.get());
             return Optional.of(importIssue);
         } else {
             return Optional.empty();
@@ -95,19 +100,24 @@ public class ImportProblemContainerService {
                 break;
             case SCALA_WILDCARD:
             case JAVA_WILDCARD:
-                String importedPackageName = getPackageName(originalLine);
-                addWildCardTargets(element, project, importClassTargets, importedPackageName);
+                Optional<String> importedPackageName = getPackageName(originalLine);
+                if(importedPackageName.isPresent()) {
+                    addWildCardTargets(element, project, importClassTargets, importedPackageName.get());
+                }
                 break;
             case MULTIPLE_SCALA:
+            case SCALA_ALIAS:
                 List<String> classNames = getClassNames(originalLine, importType);
-                String packageName = getPackageName(originalLine);
-                classNames.stream().forEach(className ->
-                        addSingleClassImportTargetIssue(
-                                packageName + ImportIssueConstants.PACKAGE_SEPARATOR + className,
-                                project,
-                                importClassTargets
-                        )
-                );
+                Optional<String> packageName = getPackageName(originalLine);
+                if(packageName.isPresent()){
+                    classNames.stream().forEach(className ->
+                            addSingleClassImportTargetIssue(
+                                    packageName.get() + ImportIssueConstants.PACKAGE_SEPARATOR + className,
+                                    project,
+                                    importClassTargets
+                            )
+                    );
+                }
                 break;
             default:
                 break;
@@ -136,12 +146,18 @@ public class ImportProblemContainerService {
 
 
     private Optional<Label> findClassTarget(String importLine, Project project) {
-        String packageName = getPackageName(importLine);
-        PsiPackage aPackage = JavaPsiFacade.getInstance(project).findPackage(packageName);
-        int indexOfClassNameSeparator = importLine.lastIndexOf(".");
-        String simpleClassName = importLine.substring(indexOfClassNameSeparator + 1);
+        Optional<Label> importClassTargetLabel = Optional.empty();
+        Optional<String> packageName = getPackageName(importLine);
 
-        return findImportClassTargetLabel(project, aPackage, simpleClassName);
+        if(packageName.isPresent()){
+            PsiPackage aPackage = JavaPsiFacade.getInstance(project).findPackage(packageName.get());
+            int indexOfClassNameSeparator = importLine.lastIndexOf(".");
+            String simpleClassName = importLine.substring(indexOfClassNameSeparator + 1);
+
+            importClassTargetLabel = findImportClassTargetLabel(project, aPackage, simpleClassName);
+        }
+
+        return importClassTargetLabel;
     }
 
     private Optional<Label> findImportClassTargetLabel(Project project, PsiPackage psiPackage, String simpleClassName) {
@@ -155,7 +171,7 @@ public class ImportProblemContainerService {
                             psiClass.getOriginalElement(),
                             psiClass.getContainingFile().getVirtualFile()
                     );
-                    target = Optional.of(targetLabel);
+                    target = Optional.ofNullable(targetLabel);
                 }
             }
         }
