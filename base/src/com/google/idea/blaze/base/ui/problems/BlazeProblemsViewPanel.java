@@ -54,7 +54,7 @@ class BlazeProblemsViewPanel extends NewErrorTreeViewPanel {
 
   private final ProblemsViewConfiguration configuration;
   private final AutoScrollToSourceHandler autoScrollToConsoleHandler;
-  private final ShowOnlyErrorsAction showOnlyErrorsAction = new ShowOnlyErrorsAction();
+  private final ShowOnlyErrorsAction showOnlyErrorsAction = (ShowOnlyErrorsAction) ActionManager.getInstance().getAction("Blaze.ShowOnlyErrorsAction");
 
   BlazeProblemsViewPanel(Project project) {
     super(project, "reference.problems.tool.window", false, false, null);
