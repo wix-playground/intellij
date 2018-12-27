@@ -129,7 +129,8 @@ public class BlazeProblemsView {
   }
 
   public void addMessage(IssueOutput issue, @Nullable Navigatable openInConsole) {
-    if (!problemHashes.add(issue.hashCode())) {
+    if (!problemHashes.add(issue.hashCode()) || (
+      issue.getCategory() != IssueOutput.Category.ERROR && panel.canHideWarnings())) {
       return;
     }
     int count = problemCount.incrementAndGet();
