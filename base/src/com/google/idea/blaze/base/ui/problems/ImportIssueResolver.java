@@ -1,7 +1,11 @@
 package com.google.idea.blaze.base.ui.problems;
 
 import com.google.idea.blaze.base.scope.output.IssueOutput;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
@@ -19,7 +23,7 @@ public class ImportIssueResolver {
 
     public static boolean isImportIssue(IssueOutput issue, VirtualFile file, Project project) {
         boolean importIssue = false;
-        if (file != null) {
+        if (file != null && issue != null && issue.getLine() > 0) {
             boolean missingImportDependencyInBuildFile =
                     Pattern.compile(missingImportRegEx).matcher(issue.getMessage()).find();
             boolean missingImportDependencyWildOrStaticJava =
@@ -28,8 +32,17 @@ public class ImportIssueResolver {
                     Pattern.compile(javaStaticImport).matcher(issue.getMessage()).find();
 
             PsiManager psiManager = PsiManager.getInstance(project);
-            PsiFile psiFile = psiManager.findFile(file);
-            String originalLine = getOriginalLineByIssue(issue, psiFile);
+
+            String originalLine = ApplicationManager.getApplication()
+                    .runReadAction(
+                            new Computable<String>() {
+                                @Override
+                                public String compute() {
+                                    PsiFile psiFile = psiManager.findFile(file);
+                                    return getOriginalLineByIssue(issue, psiFile);
+                                }
+                            });
+
 
             importIssue = missingImportDependencyJavaStaticImport ||
                     missingImportDependencyInBuildFile ||
