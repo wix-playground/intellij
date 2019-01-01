@@ -15,10 +15,12 @@
  */
 package com.google.idea.blaze.base.model;
 
+import com.google.common.hash.Hashing;
 import com.google.idea.blaze.base.ideinfo.ArtifactLocation;
 import com.google.idea.blaze.base.ideinfo.ProtoWrapper;
 import com.intellij.openapi.util.io.FileUtil;
 import java.io.File;
+import java.nio.charset.Charset;
 import javax.annotation.concurrent.Immutable;
 
 /** Uniquely identifies a library as imported into IntellJ. */
@@ -32,9 +34,8 @@ public final class LibraryKey implements ProtoWrapper<String> {
 
   public static String libraryNameFromArtifactLocation(ArtifactLocation artifactLocation) {
     File file = new File(artifactLocation.getExecutionRootRelativePath());
-    String parent = file.getParent();
-    int parentHash = parent != null ? parent.hashCode() : file.hashCode();
-    return FileUtil.getNameWithoutExtension(file) + "_" + Integer.toHexString(parentHash);
+    String hash = Hashing.sha1().hashString(file.getAbsolutePath(), Charset.forName("UTF-8")).toString();
+    return FileUtil.getNameWithoutExtension(file) + "_" + hash;
   }
 
   public static LibraryKey forResourceLibrary() {
