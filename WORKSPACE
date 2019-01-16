@@ -19,7 +19,7 @@ http_archive(
 http_archive(
     name = "intellij_ce_2018_3",
     build_file = "@//intellij_platform_sdk:BUILD.idea",
-    sha256 = "25eaa9641fa674d9fc10c2865e454187b16fac0f682ac50aef97a6ca1c75e53f",
+    sha256 = "76b3f12c5810ec791c49e018ace4f3d350856dc400b8dfdb708ca5c74ddaba2d",
     url = "https://www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/2018.3.1/ideaIC-2018.3.1.zip",
 )
 
