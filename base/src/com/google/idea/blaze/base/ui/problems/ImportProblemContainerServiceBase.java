@@ -217,8 +217,13 @@ public abstract class ImportProblemContainerServiceBase implements ProjectCompon
         }
         if (buildTarget != null) {
             return ((FuncallExpression) buildTarget).resolveBuildLabel();
-        } else if (depthSearch > 0) {
-            return getLabelFromParentRecursively(project, folder.getParent(), virtualFile, --depthSearch);
+        } else if (folder != null && depthSearch > 0) {
+            return getLabelFromParentRecursively(
+                    project,
+                    folder.getParent(),
+                    virtualFile,
+                    --depthSearch
+            );
         } else {
             return NO_TARGET_FOUND;
         }
