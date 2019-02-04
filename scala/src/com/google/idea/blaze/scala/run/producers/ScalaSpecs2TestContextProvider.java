@@ -59,6 +59,7 @@ class ScalaSpecs2TestContextProvider implements TestContextProvider {
     return TestContext.builder(testCase, ExecutorType.DEBUG_SUPPORTED_TYPES)
         .setTarget(target)
         .setTestFilter(testFilter)
+        .setSingleTestFlags(context.getProject())
         .setDescription(description)
         .build();
   }
