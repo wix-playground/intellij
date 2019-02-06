@@ -115,7 +115,7 @@ public class ImportLineUtils {
     }
 
     private static boolean startsWithUpperCase(String part) {
-        return Character.isUpperCase(part.charAt(0));
+        return StringUtils.isNotEmpty(part) && Character.isUpperCase(part.charAt(0));
     }
 
 
