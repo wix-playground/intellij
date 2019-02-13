@@ -123,6 +123,7 @@ public abstract class ImportProblemContainerServiceBase implements ProjectCompon
             case MULTIPLE_SCALA:
             case SCALA_ALIAS:
             case JAVA_STATIC:
+            case SCALA_STATIC:
                 List<String> classNames = getClassNames(originalLine, importType);
                 Optional<String> packageName = getPackageName(originalLine);
                 if (packageName.isPresent()) {
@@ -185,7 +186,7 @@ public abstract class ImportProblemContainerServiceBase implements ProjectCompon
             PsiClass[] classes = psiPackage.getClasses();
             classes = Arrays.stream(classes).distinct().toArray(PsiClass[]::new);
             for (PsiClass psiClass : classes) {
-                if (psiClass.getName().equals(simpleClassName)) {
+                if (psiClass.getName().equals(simpleClassName) || psiClass.getName().equals(simpleClassName+"$"))  {
 
                     VirtualFile virtualFile = psiClass.getContainingFile().getVirtualFile();
                     PsiElement originalElement = psiClass.getOriginalElement();

@@ -36,6 +36,7 @@ public class ImportLineUtils {
                 String packageName = importWithoutKeywords.substring(0, importWithoutKeywords.lastIndexOf(PACKAGE_SEPARATOR));
                 return Optional.of(packageName);
             case JAVA_STATIC:
+            case SCALA_STATIC:
                 List<String> packageNameParts = Arrays.asList(importWithoutKeywords.split("\\"+PACKAGE_SEPARATOR));
                 int indexOfFirstClassName = IntStream.range(0, packageNameParts.size())
                         .filter(index -> {
@@ -147,9 +148,15 @@ public class ImportLineUtils {
             return MULTIPLE_SCALA;
         } else if (isRegularImport(numberOfPartsThatStartWithUpperCase, isClassNameLast(importLinePartsArray))) {
             return REGULAR;
+        } else if(isScalaStaticImport(importWithoutKeywords)) {
+            return SCALA_STATIC;
         } else {
             return UNSUPPORTED;
         }
+    }
+
+    private static boolean isScalaStaticImport(String importWithoutKeywords) {
+        return Pattern.compile("[.][A-Z]\\w+[.]\\w+").matcher(importWithoutKeywords).find();
     }
 
     private static boolean isJavaStaticImport(String originalLine) {
@@ -164,6 +171,7 @@ public class ImportLineUtils {
             case SCALA_ALIAS:
                 return getClassNamesForScalaAlias(originalLine);
             case JAVA_STATIC:
+            case SCALA_STATIC:
                 ArrayList<String> classNames = Lists.newArrayList();
                 getClassNameWithPackageForJavaStatic(originalLine).ifPresent(classNameWithPackage -> {
                     String className = classNameWithPackage.substring(classNameWithPackage.lastIndexOf(PACKAGE_SEPARATOR) + 1);
@@ -223,7 +231,7 @@ public class ImportLineUtils {
     }
 
     public enum ImportType {
-        REGULAR, JAVA_WILDCARD, SCALA_WILDCARD, JAVA_STATIC, SCALA_ALIAS, MULTIPLE_SCALA, SCALA_OBJECTS, UNSUPPORTED
+        REGULAR, JAVA_WILDCARD, SCALA_WILDCARD, JAVA_STATIC, SCALA_ALIAS, MULTIPLE_SCALA, SCALA_OBJECTS, UNSUPPORTED, SCALA_STATIC
     }
 }
 
