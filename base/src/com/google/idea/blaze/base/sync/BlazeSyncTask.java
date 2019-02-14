@@ -124,7 +124,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 /** Syncs the project with blaze. */
-final class BlazeSyncTask implements Progressive {
+abstract class BlazeSyncTask implements Progressive {
 
   private static final Logger logger = Logger.getInstance(BlazeSyncTask.class);
 

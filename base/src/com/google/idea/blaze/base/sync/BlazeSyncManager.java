@@ -73,9 +73,9 @@ public class BlazeSyncManager {
                     new BlazeSyncParams.Builder("Initial directory update", SyncMode.NO_BUILD)
                         .setBackgroundSync(true)
                         .build();
-                submitTask(new BlazeSyncTask(project, importSettings, params));
+                submitTask(new BlazeIdeSyncTask(project, importSettings, params));
               }
-              submitTask(new BlazeSyncTask(project, importSettings, syncParams));
+              submitTask(new BlazeIdeSyncTask(project, importSettings, syncParams));
             });
   }
 
