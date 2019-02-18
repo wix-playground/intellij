@@ -128,9 +128,9 @@ public abstract class BlazeSyncTask implements Progressive {
 
   private static final Logger logger = Logger.getInstance(BlazeSyncTask.class);
 
-  private final Project project;
+  protected final Project project;
   private final BlazeImportSettings importSettings;
-  private final WorkspaceRoot workspaceRoot;
+  protected final WorkspaceRoot workspaceRoot;
   private final boolean showPerformanceWarnings;
   private final SyncStats.Builder syncStats = SyncStats.builder();
   private final TimingScopeListener timingScopeListener;
@@ -214,7 +214,7 @@ public abstract class BlazeSyncTask implements Progressive {
 
   /** Returns true if sync successfully completed */
   @VisibleForTesting
-  boolean syncProject(BlazeContext context) {
+  protected boolean syncProject(BlazeContext context) {
     TimingScope timingScope = new TimingScope("Sync", EventType.Other);
     timingScope.addScopeListener(timingScopeListener, true);
     context.push(timingScope);
