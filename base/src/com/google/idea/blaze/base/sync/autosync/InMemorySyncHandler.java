@@ -5,12 +5,12 @@ import com.google.idea.blaze.base.async.executor.ProgressiveTaskWithProgressIndi
 import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BlazeImportSettings;
 import com.google.idea.blaze.base.settings.BlazeImportSettingsManager;
+import com.google.idea.blaze.base.settings.BlazeUserSettings;
 import com.google.idea.blaze.base.sync.BlazeSyncParams;
 import com.google.idea.blaze.base.sync.BlazeSyncTask;
 import com.google.idea.blaze.base.sync.SyncMode;
 import com.google.idea.blaze.base.sync.inmemory.BlazeInMemorySyncTask;
 import com.google.idea.blaze.base.sync.status.BlazeSyncStatus;
-import com.google.idea.common.experiments.BoolExperiment;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -22,8 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.Future;
 
 public class InMemorySyncHandler implements ProjectComponent {
-    private static final BoolExperiment autoSyncEnabled =
-            new BoolExperiment("blaze.in.memory.auto.sync.enabled", true);
     private final Project project;
 
     private final PendingChangesHandler<VirtualFile> pendingChangesHandler =
@@ -39,6 +37,9 @@ public class InMemorySyncHandler implements ProjectComponent {
             };
 
     private void queueAutomaticSync(ImmutableSet<VirtualFile> changes) {
+        if (!BlazeUserSettings.getInstance().getInMemoryAutoSync())
+            return;
+
         BlazeImportSettings importSettings = BlazeImportSettingsManager.getInstance(project).getImportSettings();
         if (importSettings == null) {
             throw new IllegalStateException(
@@ -71,7 +72,7 @@ public class InMemorySyncHandler implements ProjectComponent {
         @Override
         public void fileCreated(@NotNull VirtualFileEvent event) {
             VirtualFile file = event.getFile();
-            if (autoSyncEnabled.getValue()) {
+            if (BlazeUserSettings.getInstance().getInMemoryAutoSync()) {
                 pendingChangesHandler.queueChange(file);
             }
         }

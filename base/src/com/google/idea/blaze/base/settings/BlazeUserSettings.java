@@ -82,6 +82,8 @@ public class BlazeUserSettings implements PersistentStateComponent<BlazeUserSett
   private String blazeBinaryPath = DEFAULT_BLAZE_PATH;
   private String bazelBinaryPath = DEFAULT_BAZEL_PATH;
 
+  private boolean inMemoryAutoSync = false;
+
   public static BlazeUserSettings getInstance() {
     return ServiceManager.getService(BlazeUserSettings.class);
   }
@@ -157,6 +159,14 @@ public class BlazeUserSettings implements PersistentStateComponent<BlazeUserSett
 
   public void setShowProblemsViewOnRun(FocusBehavior showProblemsViewForRunAction) {
     this.showProblemsViewOnRun = showProblemsViewForRunAction;
+  }
+
+  public boolean getInMemoryAutoSync() {
+    return inMemoryAutoSync;
+  }
+
+  public void setInMemoryAutoSync(boolean inMemoryAutoSync) {
+    this.inMemoryAutoSync = inMemoryAutoSync;
   }
 
   /**
