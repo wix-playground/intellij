@@ -158,7 +158,7 @@ public abstract class BlazeSyncIntegrationTestCase extends BlazeIntegrationTestC
   protected void runBlazeSync(BlazeSyncParams syncParams) {
     Project project = getProject();
     final BlazeSyncTask syncTask =
-        new BlazeSyncTask(
+        new BlazeIdeSyncTask(
             project,
             BlazeImportSettingsManager.getInstance(project).getImportSettings(),
             syncParams);

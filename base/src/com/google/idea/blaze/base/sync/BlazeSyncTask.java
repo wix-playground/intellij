@@ -130,13 +130,13 @@ import javax.annotation.concurrent.GuardedBy;
 import static com.intellij.ui.AppUIUtil.invokeLaterIfProjectAlive;
 
 /** Syncs the project with blaze. */
-final class BlazeSyncTask implements Progressive {
+public abstract class BlazeSyncTask implements Progressive {
 
   private static final Logger logger = Logger.getInstance(BlazeSyncTask.class);
 
-  private final Project project;
+  protected final Project project;
   private final BlazeImportSettings importSettings;
-  private final WorkspaceRoot workspaceRoot;
+  protected final WorkspaceRoot workspaceRoot;
   private final boolean showPerformanceWarnings;
   private final SyncStats.Builder syncStats = SyncStats.builder();
   private final TimingScopeListener timingScopeListener;
@@ -147,7 +147,7 @@ final class BlazeSyncTask implements Progressive {
 
   private BlazeSyncParams syncParams;
 
-  BlazeSyncTask(
+  protected BlazeSyncTask(
       Project project, BlazeImportSettings importSettings, final BlazeSyncParams syncParams) {
     this.project = project;
     this.importSettings = importSettings;
@@ -231,7 +231,7 @@ final class BlazeSyncTask implements Progressive {
 
   /** Returns true if sync successfully completed */
   @VisibleForTesting
-  boolean syncProject(BlazeContext context) {
+  protected boolean syncProject(BlazeContext context) {
     TimingScope timingScope = new TimingScope("Sync", EventType.Other);
     timingScope.addScopeListener(timingScopeListener, true);
     context.push(timingScope);
@@ -331,26 +331,8 @@ final class BlazeSyncTask implements Progressive {
             project, projectViewSet, BlazeCommandName.INFO, BlazeInvocationContext.SYNC_CONTEXT);
     syncStats.setSyncFlags(syncFlags);
     syncStats.setSyncBinaryType(Blaze.getBuildSystemProvider(project).getSyncBinaryType());
-    ListenableFuture<BlazeInfo> blazeInfoFuture =
-        BlazeInfoRunner.getInstance()
-            .runBlazeInfo(
-                context,
-                importSettings.getBuildSystem(),
-                Blaze.getBuildSystemProvider(project).getSyncBinaryPath(project),
-                workspaceRoot,
-                syncFlags);
 
-    ListenableFuture<WorkingSet> workingSetFuture =
-        vcsHandler.getWorkingSet(project, context, workspaceRoot, executor);
-
-    BlazeInfo blazeInfo =
-        FutureUtil.waitForFuture(context, blazeInfoFuture)
-            .timed(Blaze.buildSystemName(project) + "Info", EventType.BlazeInvocation)
-            .withProgressMessage(
-                String.format("Running %s info...", Blaze.buildSystemName(project)))
-            .onError(String.format("Could not run %s info", Blaze.buildSystemName(project)))
-            .run()
-            .result();
+    BlazeInfo blazeInfo = getBlazeInfo(context, syncFlags, oldBlazeProjectData);
     if (blazeInfo == null) {
       return SyncResult.FAILURE;
     }
@@ -382,6 +364,9 @@ final class BlazeSyncTask implements Progressive {
     }
 
     final BlazeProjectData newBlazeProjectData;
+
+    ListenableFuture<WorkingSet> workingSetFuture =
+            vcsHandler.getWorkingSet(project, context, workspaceRoot, executor);
 
     WorkingSet workingSet =
         FutureUtil.waitForFuture(context, workingSetFuture)
@@ -590,6 +575,26 @@ final class BlazeSyncTask implements Progressive {
     return syncResult;
   }
 
+  protected BlazeInfo getBlazeInfo(BlazeContext context, List<String> syncFlags, BlazeProjectData oldBlazeProjectData) {
+    ListenableFuture<BlazeInfo> blazeInfoFuture =
+        BlazeInfoRunner.getInstance()
+            .runBlazeInfo(
+                context,
+                importSettings.getBuildSystem(),
+                Blaze.getBuildSystemProvider(project).getSyncBinaryPath(project),
+                workspaceRoot,
+                syncFlags);
+
+    return
+        FutureUtil.waitForFuture(context, blazeInfoFuture)
+            .timed(Blaze.buildSystemName(project) + "Info", EventType.BlazeInvocation)
+            .withProgressMessage(
+                String.format("Running %s info...", Blaze.buildSystemName(project)))
+            .onError(String.format("Could not run %s info", Blaze.buildSystemName(project)))
+            .run()
+            .result();
+  }
+
   private static void refreshVirtualFileSystem(
       BlazeContext context, BlazeProjectData blazeProjectData) {
     Scope.push(
@@ -728,7 +733,7 @@ final class BlazeSyncTask implements Progressive {
     return result;
   }
 
-  private BlazeIdeInterface.IdeResult getIdeQueryResult(
+  protected BlazeIdeInterface.IdeResult getIdeQueryResult(
       Project project,
       BlazeContext parentContext,
       ProjectViewSet projectViewSet,

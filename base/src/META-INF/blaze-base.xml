@@ -365,6 +365,9 @@
     <component>
       <implementation-class>com.google.idea.blaze.base.sync.autosync.AutoSyncHandler</implementation-class>
     </component>
+    <component>
+      <implementation-class>com.google.idea.blaze.base.sync.autosync.InMemorySyncHandler</implementation-class>
+    </component>
   </project-components>
 
   <extensionPoints>

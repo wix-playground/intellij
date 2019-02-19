@@ -54,6 +54,9 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
   public static final String SHOW_ADD_FILE_TO_PROJECT_LABEL_TEXT =
       "Show 'Add source to project' editor notifications";
 
+  public static final String ENABLE_IN_MEMORY_SYNC_TEXT =
+          "Enable automatic sync for newly-added files";
+
   private final BuildSystem defaultBuildSystem;
   private final Collection<BlazeUserSettingsContributor> settingsContributors;
   private final SearchableOptionsHelper helper;
@@ -74,6 +77,7 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
   private JCheckBox showAddFileToProjectNotification;
   private FileSelectorWithStoredHistory blazeBinaryPathField;
   private FileSelectorWithStoredHistory bazelBinaryPathField;
+  private JCheckBox inMemoryAutoSync;
 
   public BlazeUserSettingsConfigurable() {
     this.defaultBuildSystem = Blaze.defaultBuildSystem();
@@ -112,6 +116,7 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
     settings.setShowAddFileToProjectNotification(showAddFileToProjectNotification.isSelected());
     settings.setBlazeBinaryPath(Strings.nullToEmpty(blazeBinaryPathField.getText()));
     settings.setBazelBinaryPath(Strings.nullToEmpty(bazelBinaryPathField.getText()));
+    settings.setInMemoryAutoSync(inMemoryAutoSync.isSelected());
 
     for (BlazeUserSettingsContributor settingsContributor : settingsContributors) {
       settingsContributor.apply();
@@ -132,6 +137,7 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
     showAddFileToProjectNotification.setSelected(settings.getShowAddFileToProjectNotification());
     blazeBinaryPathField.setTextWithHistory(settings.getBlazeBinaryPath());
     bazelBinaryPathField.setTextWithHistory(settings.getBazelBinaryPath());
+    inMemoryAutoSync.setSelected(settings.getInMemoryAutoSync());
 
     for (BlazeUserSettingsContributor settingsContributor : settingsContributors) {
       settingsContributor.reset();
@@ -158,6 +164,7 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
             || formatBuildFilesOnSave.isSelected() != settings.getFormatBuildFilesOnSave()
             || showAddFileToProjectNotification.isSelected()
                 != settings.getShowAddFileToProjectNotification()
+            || inMemoryAutoSync.isSelected() != settings.getInMemoryAutoSync()
             || !Objects.equal(
                 Strings.nullToEmpty(blazeBinaryPathField.getText()).trim(),
                 Strings.nullToEmpty(settings.getBlazeBinaryPath()))
@@ -316,6 +323,23 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
       rowi = contributor.addComponents(mainPanel, helper, rowi);
     }
 
+    mainPanel.add(
+            getExperimentalSettingsUI(),
+            new GridConstraints(
+                    rowi++,
+                    0,
+                    1,
+                    2,
+                    GridConstraints.ANCHOR_NORTHWEST,
+                    GridConstraints.FILL_HORIZONTAL,
+                    GridConstraints.SIZEPOLICY_CAN_GROW,
+                    GridConstraints.SIZEPOLICY_CAN_GROW,
+                    null,
+                    null,
+                    null,
+                    0,
+                    false));
+
     blazeBinaryPathField =
         FileSelectorWithStoredHistory.create(
             BLAZE_BINARY_PATH_KEY, "Specify the blaze binary path");
@@ -468,5 +492,30 @@ public class BlazeUserSettingsConfigurable extends BaseConfigurable
             null,
             0,
             false));
+  }
+
+  private JPanel getExperimentalSettingsUI() {
+    JPanel panel = new JPanel();
+    panel.setBorder(IdeBorderFactory.createTitledBorder("Experimental", false));
+    panel.setLayout(new GridLayoutManager(3, 6, JBUI.emptyInsets(), -1, -1));
+
+    inMemoryAutoSync = helper.createSearchableCheckBox(ENABLE_IN_MEMORY_SYNC_TEXT, true);
+    panel.add(inMemoryAutoSync,
+            new GridConstraints(
+            0,
+            0,
+            1,
+            2,
+            GridConstraints.ANCHOR_NORTHWEST,
+            GridConstraints.FILL_NONE,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+            GridConstraints.SIZEPOLICY_FIXED,
+            null,
+            null,
+            null,
+            0,
+            false));
+
+    return panel;
   }
 }
