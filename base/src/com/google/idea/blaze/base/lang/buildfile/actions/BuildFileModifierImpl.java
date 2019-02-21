@@ -18,6 +18,7 @@ package com.google.idea.blaze.base.lang.buildfile.actions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.CharStreams;
 import com.google.idea.blaze.base.actions.BuildFileUtils;
 import com.google.idea.blaze.base.buildmodifier.BuildFileModifier;
 import com.google.idea.blaze.base.lang.buildfile.psi.*;
@@ -27,6 +28,7 @@ import com.google.idea.blaze.base.lang.buildfile.references.BuildReferenceManage
 import com.google.idea.blaze.base.lang.buildfile.search.BlazePackage;
 import com.google.idea.blaze.base.model.primitives.Kind;
 import com.google.idea.blaze.base.model.primitives.Label;
+import com.google.idea.blaze.base.settings.BlazeUserSettings;
 import com.intellij.execution.OutputListener;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.OSProcessHandler;
@@ -46,11 +48,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** Implementation of BuildFileModifier. Modifies the PSI tree directly. */
 public class BuildFileModifierImpl implements BuildFileModifier {
@@ -270,9 +277,46 @@ public class BuildFileModifierImpl implements BuildFileModifier {
         return newElement.getPsi();
     }
 
-    private PsiElement createRule(Project project, Kind ruleKind, String ruleName) {
-    String text =
-        Joiner.on("\n").join(ruleKind.toString() + "(", "    name = \"" + ruleName + "\"", ")");
+  private static String run(String[] command) throws IOException, InterruptedException {
+    return run(command, "");
+  }
+
+  private static String run(String[] command, String input) throws IOException, InterruptedException {
+    ProcessBuilder builder = new ProcessBuilder(command);
+    Process process = builder.start();
+    process.getOutputStream().write(input.getBytes(UTF_8));
+    process.getOutputStream().close();
+    String result = CharStreams.toString(new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)));
+    String errors = CharStreams.toString(new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)));
+    process.waitFor();
+    if (errors.length() > 0) {
+      String message = Joiner.on(' ').join(command, errors);
+      if (result.length() == 0) {
+        throw new IOException(message);
+      } else {
+        logger.warn(message);
+      }
+    }
+    return result;
+  }
+
+  private PsiElement createRule(Project project, Kind ruleKind, String ruleName) {
+    String command = Joiner.on(" ").join("new", ruleKind.toString(), ruleName);
+    String text = ruleKind.toString() + "(name = \"" + ruleName + "\")";
+    BlazeUserSettings settings = BlazeUserSettings.getInstance();
+    try {
+      text = run(new String[] { settings.getBuildozerBinaryPath(), command, "-:*" });
+    } catch (IOException|InterruptedException ec) {
+      try {
+        if (!settings.isBuildozerDefault()) {
+          text = run(new String[] { settings.getDefaultBuildozerPath(), command, "-:*" });
+        } else {
+          throw ec;
+        }
+      } catch (IOException|InterruptedException ed) {
+        logger.warn("Unable to invoke buildozer, falling back to string concatenation", ed);
+      }
+    }
     Expression expr = BuildElementGenerator.getInstance(project).createExpressionFromText(text);
     assert (expr instanceof FuncallExpression);
     return expr;
