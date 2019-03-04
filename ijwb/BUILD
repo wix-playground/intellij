@@ -42,7 +42,7 @@ stamped_plugin_xml(
     changelog_file = "//:changelog",
     description_file = "src/META-INF/description.html",
     plugin_id = "com.google.idea.bazel.ijwb",
-    plugin_name = "Bazel",
+    plugin_name = "Bazel (Wix Fork)",
     stamp_since_build = True,
     stamp_until_build = True,
     version = VERSION,
