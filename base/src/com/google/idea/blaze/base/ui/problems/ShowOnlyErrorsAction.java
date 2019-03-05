@@ -19,6 +19,7 @@ public class ShowOnlyErrorsAction extends ToggleAction {
   @Override
   public void setSelected(@NotNull AnActionEvent anActionEvent, boolean b) {
     toggled = b;
+    BlazeProblemsView.getInstance(anActionEvent.getProject()).reload();
   }
 
   public boolean isToggled() {
