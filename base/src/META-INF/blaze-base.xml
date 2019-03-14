@@ -449,6 +449,7 @@
     <AutoSyncProvider implementation="com.google.idea.blaze.base.sync.autosync.ProjectViewAutoSyncProvider"/>
     <AutoSyncProvider implementation="com.google.idea.blaze.base.sync.autosync.BuildFileAutoSyncProvider"/>
     <AutoSyncProvider implementation="com.google.idea.blaze.base.sync.autosync.ProtoAutoSyncProvider"/>
+    <AutoSyncProvider implementation="com.google.idea.blaze.base.sync.autosync.SourceFileAutoSyncProvider"/>
     <WorkspacePathResolverExtractor implementation="com.google.idea.blaze.base.sync.workspace.WorkspacePathResolverImpl$Extractor"/>
     <SyncDataExtractor implementation="com.google.idea.blaze.base.sync.aspects.BlazeIdeInterfaceState$Extractor"/>
     <SyncDataExtractor implementation="com.google.idea.blaze.base.lang.buildfile.sync.LanguageSpecResult$Extractor"/>
