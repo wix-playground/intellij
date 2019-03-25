@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.idea.blaze.base.command.BlazeInvocationContext.ContextType;
 import com.google.idea.blaze.base.projectview.ProjectViewSet;
 import com.google.idea.blaze.base.projectview.section.sections.BuildFlagsSection;
+import com.google.idea.blaze.base.projectview.section.sections.SingleTestFlagsSection;
 import com.google.idea.blaze.base.projectview.section.sections.SyncFlagsSection;
 import com.google.idea.blaze.base.projectview.section.sections.TestFlagsSection;
 import com.intellij.execution.configurations.ParametersList;
@@ -72,6 +73,7 @@ public final class BlazeFlags {
     }
     if (BlazeCommandName.TEST.equals(command)) {
       flags.addAll(expandBuildFlags(projectViewSet.listItems(TestFlagsSection.KEY)));
+      flags.addAll(expandBuildFlags(projectViewSet.listItems(SingleTestFlagsSection.KEY)));
     }
     return flags;
   }
