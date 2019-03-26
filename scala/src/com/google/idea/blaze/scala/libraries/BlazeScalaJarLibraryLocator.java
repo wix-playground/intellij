@@ -8,6 +8,7 @@ import com.google.idea.blaze.scala.sync.model.BlazeScalaSyncData;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.util.ui.UIUtil;
 
 class BlazeScalaJarLibraryLocator implements BlazeJarLibraryLocator {
 
@@ -22,7 +23,8 @@ class BlazeScalaJarLibraryLocator implements BlazeJarLibraryLocator {
     LibraryKey libraryKey = LibraryKey.fromIntelliJLibraryName(libName);
     BlazeScalaSyncData syncData = blazeProjectData.getSyncState().get(BlazeScalaSyncData.class);
     if (syncData == null) {
-      Messages.showErrorDialog(project, "Project isn't synced. Please resync project.", "Error");
+      UIUtil.invokeLaterIfNeeded(
+        () -> Messages.showErrorDialog(project, "Project isn't synced. Please resync project.", "Error"));
       return null;
     }
     return syncData.getImportResult().libraries.get(libraryKey);

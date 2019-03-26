@@ -311,7 +311,11 @@ public class JarCache {
     OutputArtifact artifact =
         decoder.resolveOutput(library.libraryArtifact.jarForIntellijLibrary());
     if (!enabled) {
-      return getFallbackFile(artifact);
+      if (artifact != null)
+        return getFallbackFile(artifact);
+
+      logger.warn("Unable to resolve artifact for library: " + library.toString());
+      return decoder.decode(library.libraryArtifact.jarForIntellijLibrary());
     }
     String cacheKey = cacheKeyForJar(artifact);
     return getCacheFile(cacheKey).orElseGet(() -> getFallbackFile(artifact));
