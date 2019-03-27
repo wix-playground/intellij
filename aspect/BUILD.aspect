@@ -5,9 +5,6 @@
 
 licenses(["notice"])  # Apache 2.0
 
-load(":intellij_info_impl.bzl",
-     "define_flag_hack")
-
 java_binary(
     name = "JarFilter_bin",
     main_class = "com.google.idea.blaze.aspect.JarFilter",
@@ -31,5 +28,3 @@ java_import(
     name = "package_parser_lib",
     jars = ["tools/PackageParser_deploy.jar"],
 )
-
-define_flag_hack()
