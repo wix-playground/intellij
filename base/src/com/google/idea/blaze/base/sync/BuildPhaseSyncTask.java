@@ -242,20 +242,13 @@ final class BuildPhaseSyncTask {
           .submit(parentContext);
       throw new SyncFailedException();
     }
-    ImmutableList<TargetExpression> retained =
-        SourceToTargetFilteringStrategy.filterTargets(targets).stream()
-            .filter(
-                t ->
-                    t.getKind() != null
-                        && languageSettings.isLanguageActive(t.getKind().getLanguageClass()))
-            .map(t -> t.label)
-            .collect(toImmutableList());
-    parentContext.output(
-        PrintOutput.log(
-            String.format(
-                "%d targets found under project directories; syncing %d of them.",
-                targets.size(), retained.size())));
-    return retained;
+    return SourceToTargetFilteringStrategy.filterTargets(targets).stream()
+        .filter(
+            t ->
+                t.getKind() != null
+                    && languageSettings.isLanguageActive(t.getKind().getLanguageClass()))
+        .map(t -> t.label)
+        .collect(toImmutableList());
   }
 
   private Collection<? extends TargetExpression> getWorkingSetTargets(
