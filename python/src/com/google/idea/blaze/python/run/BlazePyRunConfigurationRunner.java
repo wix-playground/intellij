@@ -292,7 +292,8 @@ public class BlazePyRunConfigurationRunner implements BlazeCommandRunConfigurati
     }
 
     SaveUtil.saveAllFiles();
-    try (BuildResultHelper buildResultHelper = BuildResultHelperProvider.create(project)) {
+    try (BuildResultHelper buildResultHelper =
+        BuildResultHelperProvider.forFiles(project, file -> true)) {
 
       ListenableFuture<BuildResult> buildOperation =
           BlazeBeforeRunCommandHelper.runBlazeCommand(
@@ -321,8 +322,7 @@ public class BlazePyRunConfigurationRunner implements BlazeCommandRunConfigurati
       try {
         candidateFiles =
             LocalFileOutputArtifact.getLocalOutputFiles(
-                    buildResultHelper.getBuildArtifactsForTarget(
-                        (Label) configuration.getTarget(), file -> true))
+                    buildResultHelper.getBuildArtifactsForTarget((Label) configuration.getTarget()))
                 .stream()
                 .filter(File::canExecute)
                 .collect(Collectors.toList());

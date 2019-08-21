@@ -20,6 +20,7 @@ import com.google.idea.blaze.base.command.info.BlazeInfo;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.project.Project;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /** Determines which @{link BuildResultHelper} to use for the current project. */
 public interface BuildResultHelperProvider {
@@ -28,21 +29,27 @@ public interface BuildResultHelperProvider {
       ExtensionPointName.create("com.google.idea.blaze.BuildResultHelperProvider");
 
   /** Constructs a BuildResultHelper if enabled under the current project for non-sync cases. */
-  Optional<BuildResultHelper> doCreate(Project project);
+  Optional<BuildResultHelper> createForFiles(Project project, Predicate<String> fileFilter);
 
   /** Constructs a BuildResultHelper, for the purposes of sync. */
-  Optional<BuildResultHelper> doCreateForSync(Project project, BlazeInfo blazeInfo);
+  Optional<BuildResultHelper> createForFilesForSync(
+      Project project, BlazeInfo blazeInfo, Predicate<String> fileFilter);
 
-  /** Constructs a new build result helper. */
+  /**
+   * Constructs a new build result helper.
+   *
+   * @param project The current project.
+   * @param fileFilter A filter for the output artifacts you are interested in.
+   */
   @MustBeClosed
-  static BuildResultHelper create(Project project) {
+  static BuildResultHelper forFiles(Project project, Predicate<String> fileFilter) {
     for (BuildResultHelperProvider extension : EP_NAME.getExtensions()) {
-      Optional<BuildResultHelper> helper = extension.doCreate(project);
+      Optional<BuildResultHelper> helper = extension.createForFiles(project, fileFilter);
       if (helper.isPresent()) {
         return helper.get();
       }
     }
-    return new BuildResultHelperBep();
+    return new BuildResultHelperBep(fileFilter);
   }
 
   /**
@@ -50,15 +57,18 @@ public interface BuildResultHelperProvider {
    *
    * @param project The current project.
    * @param blazeInfo The latest BlazeInfo data relevant to sync
+   * @param fileFilter A filter for the output artifacts you are interested in.
    */
   @MustBeClosed
-  static BuildResultHelper createForSync(Project project, BlazeInfo blazeInfo) {
+  static BuildResultHelper forFilesForSync(
+      Project project, BlazeInfo blazeInfo, Predicate<String> fileFilter) {
     for (BuildResultHelperProvider extension : EP_NAME.getExtensions()) {
-      Optional<BuildResultHelper> helper = extension.doCreateForSync(project, blazeInfo);
+      Optional<BuildResultHelper> helper =
+          extension.createForFilesForSync(project, blazeInfo, fileFilter);
       if (helper.isPresent()) {
         return helper.get();
       }
     }
-    return new BuildResultHelperBep();
+    return new BuildResultHelperBep(fileFilter);
   }
 }

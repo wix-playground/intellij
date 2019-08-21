@@ -70,7 +70,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
@@ -250,7 +249,12 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
         FastBuildAspectStrategy.getInstance(
             projectDataManager.getBlazeProjectData().getBlazeVersionData().buildSystem());
     @SuppressWarnings("MustBeClosedChecker") // close buildResultHelper manually via a listener
-    BuildResultHelper buildResultHelper = BuildResultHelperProvider.create(project);
+    BuildResultHelper buildResultHelper =
+        BuildResultHelperProvider.forFiles(
+            project,
+            file ->
+                file.endsWith(deployJarLabel.targetName().toString())
+                    || aspectStrategy.getAspectOutputFilePredicate().test(file));
 
     Stopwatch timer = Stopwatch.createUnstarted();
 
@@ -300,22 +304,17 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
               if (result.status != Status.SUCCESS) {
                 throw new RuntimeException("Blaze failure building deploy jar");
               }
-              Predicate<String> filePredicate =
-                  file ->
-                      file.endsWith(deployJarLabel.targetName().toString())
-                          || aspectStrategy.getAspectOutputFilePredicate().test(file);
               try {
                 ImmutableList<File> deployJarArtifacts =
                     LocalFileOutputArtifact.getLocalOutputFiles(
-                        buildResultHelper.getBuildArtifactsForTarget(
-                            deployJarLabel, filePredicate));
+                        buildResultHelper.getBuildArtifactsForTarget(deployJarLabel));
                 checkState(deployJarArtifacts.size() == 1);
                 File deployJar = deployJarArtifacts.get(0);
 
                 ImmutableList<File> ideInfoFiles =
                     LocalFileOutputArtifact.getLocalOutputFiles(
                         buildResultHelper.getArtifactsForOutputGroup(
-                            aspectStrategy.getAspectOutputGroup(), filePredicate));
+                            aspectStrategy.getAspectOutputGroup()));
 
                 // if targets are built with multiple configurations, just take the first one
                 // TODO(brendandouglas): choose a consistent configuration instead

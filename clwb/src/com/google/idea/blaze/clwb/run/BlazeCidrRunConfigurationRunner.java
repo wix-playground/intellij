@@ -95,7 +95,8 @@ public class BlazeCidrRunConfigurationRunner implements BlazeCommandRunConfigura
    */
   private File getExecutableToDebug(ExecutionEnvironment env) throws ExecutionException {
     SaveUtil.saveAllFiles();
-    try (BuildResultHelper buildResultHelper = BuildResultHelperProvider.create(env.getProject())) {
+    try (BuildResultHelper buildResultHelper =
+        BuildResultHelperProvider.forFiles(env.getProject(), file -> true)) {
 
       List<String> extraDebugFlags;
       if (!BlazeGDBServerProvider.shouldUseGdbserver()) {
@@ -141,8 +142,7 @@ public class BlazeCidrRunConfigurationRunner implements BlazeCommandRunConfigura
       try {
         candidateFiles =
             LocalFileOutputArtifact.getLocalOutputFiles(
-                    buildResultHelper.getBuildArtifactsForTarget(
-                        (Label) configuration.getTarget(), file -> true))
+                    buildResultHelper.getBuildArtifactsForTarget((Label) configuration.getTarget()))
                 .stream()
                 .filter(File::canExecute)
                 .collect(Collectors.toList());

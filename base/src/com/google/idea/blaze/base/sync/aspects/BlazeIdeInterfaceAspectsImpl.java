@@ -343,7 +343,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
       List<TargetExpression> targets,
       AspectStrategy aspectStrategy) {
     try (BuildResultHelper buildResultHelper =
-        BuildResultHelperProvider.createForSync(project, blazeInfo)) {
+        BuildResultHelperProvider.forFilesForSync(project, blazeInfo, f -> true)) {
 
       BlazeCommand.Builder builder =
           BlazeCommand.builder(getBinaryPath(project), BlazeCommandName.BUILD)
@@ -380,7 +380,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
             try {
               childContext.push(new TimingScope("ReadingBuildOutputs", EventType.Other));
               return new BlazeBuildOutputs(
-                  buildResultHelper.getPerOutputGroupArtifacts(file -> true), buildResult);
+                  buildResultHelper.getPerOutputGroupArtifacts(), buildResult);
             } catch (GetArtifactsException e) {
               IssueOutput.error("Failed to get build outputs: " + e.getMessage()).submit(context);
               return new BlazeBuildOutputs(ImmutableListMultimap.of(), buildResult);
