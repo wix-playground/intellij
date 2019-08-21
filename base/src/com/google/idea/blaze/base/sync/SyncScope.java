@@ -34,10 +34,6 @@ final class SyncScope {
     void execute(BlazeContext context) throws SyncFailedException, SyncCanceledException;
   }
 
-  interface ScopedSyncFunction<T> {
-    T execute(BlazeContext context) throws SyncFailedException, SyncCanceledException;
-  }
-
   /** Runs a scoped operation with the given {@link TimingScope} attached. */
   static void runWithTiming(
       @Nullable BlazeContext parentContext,
@@ -55,31 +51,13 @@ final class SyncScope {
    * Runs a scoped operation in a new nested scope, handling checked sync exceptions appropriately.
    */
   static void push(@Nullable BlazeContext parentContext, ScopedSyncOperation scopedOperation) {
-    push(
-        parentContext,
-        context -> {
-          scopedOperation.execute(context);
-          return null;
-        });
-  }
-
-  /**
-   * Runs a scoped operation in a new nested scope, handling checked sync exceptions appropriately.
-   *
-   * <p>Returns null if the {@link ScopedSyncFunction} throws a {@link SyncFailedException} or
-   * {@link SyncCanceledException}.
-   */
-  @Nullable
-  static <T> T push(@Nullable BlazeContext parentContext, ScopedSyncFunction<T> scopedOperation) {
     BlazeContext context = new BlazeContext(parentContext);
     try {
-      return scopedOperation.execute(context);
+      scopedOperation.execute(context);
     } catch (SyncCanceledException e) {
       context.setCancelled();
-      return null;
     } catch (SyncFailedException e) {
       context.setHasError();
-      return null;
     } catch (ProcessCanceledException e) {
       context.setCancelled();
       throw e;
