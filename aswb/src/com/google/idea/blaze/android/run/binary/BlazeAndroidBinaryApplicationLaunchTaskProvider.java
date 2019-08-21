@@ -23,10 +23,10 @@ import com.android.tools.idea.run.tasks.DefaultActivityLaunchTask;
 import com.android.tools.idea.run.tasks.LaunchTask;
 import com.android.tools.idea.run.tasks.SpecificActivityLaunchTask;
 import com.android.tools.idea.run.util.ProcessHandlerLaunchStatus;
-import com.google.idea.blaze.android.manifest.ManifestParser;
 import com.google.idea.blaze.android.run.LaunchStatusCompat;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import java.io.File;
 
 /** Provides the launch task for android_binary */
 public class BlazeAndroidBinaryApplicationLaunchTaskProvider {
@@ -36,7 +36,7 @@ public class BlazeAndroidBinaryApplicationLaunchTaskProvider {
   public static LaunchTask getApplicationLaunchTask(
       Project project,
       ApplicationIdProvider applicationIdProvider,
-      ManifestParser.ParsedManifest mergedManifestParsedManifest,
+      File mergedManifestFile,
       BlazeAndroidBinaryRunConfigurationState configState,
       StartActivityFlagsProvider startActivityFlagsProvider,
       ProcessHandlerLaunchStatus processHandlerLaunchStatus) {
@@ -46,9 +46,12 @@ public class BlazeAndroidBinaryApplicationLaunchTaskProvider {
       final LaunchTask launchTask;
 
       switch (configState.getMode()) {
+        case BlazeAndroidBinaryRunConfigurationState.DO_NOTHING:
+          launchTask = null;
+          break;
         case BlazeAndroidBinaryRunConfigurationState.LAUNCH_DEFAULT_ACTIVITY:
           BlazeDefaultActivityLocator activityLocator =
-              new BlazeDefaultActivityLocator(mergedManifestParsedManifest);
+              new BlazeDefaultActivityLocator(project, mergedManifestFile);
           launchTask =
               new DefaultActivityLaunchTask(
                   applicationId, activityLocator, startActivityFlagsProvider);
@@ -62,7 +65,6 @@ public class BlazeAndroidBinaryApplicationLaunchTaskProvider {
           launchTask =
               new AndroidDeepLinkLaunchTask(configState.getDeepLink(), startActivityFlagsProvider);
           break;
-        case BlazeAndroidBinaryRunConfigurationState.DO_NOTHING:
         default:
           launchTask = null;
           break;

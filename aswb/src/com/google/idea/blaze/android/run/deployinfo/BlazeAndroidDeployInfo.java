@@ -18,19 +18,18 @@ package com.google.idea.blaze.android.run.deployinfo;
 import com.google.common.collect.Lists;
 import com.google.devtools.build.lib.rules.android.deployinfo.AndroidDeployInfoOuterClass;
 import com.google.idea.blaze.android.manifest.ManifestParser;
-import com.google.idea.blaze.android.manifest.ParsedManifestService;
-import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.jetbrains.android.dom.manifest.Manifest;
 
 /** Info about the android_binary/android_test to deploy. */
 public class BlazeAndroidDeployInfo {
-  private static final Logger log = Logger.getInstance(BlazeAndroidDeployInfo.class);
   private final Project project;
   private final File executionRoot;
   private final AndroidDeployInfoOuterClass.AndroidDeployInfo deployInfo;
@@ -44,22 +43,22 @@ public class BlazeAndroidDeployInfo {
     this.deployInfo = deployInfo;
   }
 
+  @Nullable
   public File getMergedManifestFile() {
     return new File(executionRoot, deployInfo.getMergedManifest().getExecRootPath());
   }
 
   @Nullable
-  public ManifestParser.ParsedManifest getMergedManifest() {
+  public Manifest getMergedManifest() {
     File manifestFile = getMergedManifestFile();
-    try {
-      return ParsedManifestService.getInstance(project).getParsedManifest(manifestFile);
-    } catch (IOException e) {
-      log.warn("Could not read merged manifest file: " + manifestFile);
-      return null;
-    }
+    // Run in a read action since otherwise, it might throw a read access exception.
+    return ApplicationManager.getApplication()
+        .runReadAction(
+            (Computable<Manifest>)
+                () -> ManifestParser.getInstance(project).getManifest(manifestFile));
   }
 
-  private List<File> getAdditionalMergedManifestFiles() {
+  public List<File> getAdditionalMergedManifestFiles() {
     return deployInfo
         .getAdditionalMergedManifestsList()
         .stream()
@@ -67,17 +66,10 @@ public class BlazeAndroidDeployInfo {
         .collect(Collectors.toList());
   }
 
-  public List<ManifestParser.ParsedManifest> getAdditionalMergedManifest() {
-    return getAdditionalMergedManifestFiles().stream()
-        .map(
-            file -> {
-              try {
-                return ParsedManifestService.getInstance(project).getParsedManifest(file);
-              } catch (IOException e) {
-                log.warn("Could not read merged manifest file: " + file);
-                return null;
-              }
-            })
+  public List<Manifest> getAdditionalMergedManifests() {
+    return getAdditionalMergedManifestFiles()
+        .stream()
+        .map(file -> ManifestParser.getInstance(project).getManifest(file))
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
   }

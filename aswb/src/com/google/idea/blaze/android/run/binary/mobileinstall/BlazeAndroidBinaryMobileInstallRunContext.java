@@ -150,7 +150,7 @@ public class BlazeAndroidBinaryMobileInstallRunContext implements BlazeAndroidRu
     return BlazeAndroidBinaryApplicationLaunchTaskProvider.getApplicationLaunchTask(
         project,
         applicationIdProvider,
-        deployInfo.getMergedManifest(),
+        deployInfo.getMergedManifestFile(),
         configState,
         startActivityFlagsProvider,
         processHandlerLaunchStatus);

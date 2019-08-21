@@ -188,7 +188,7 @@ public class BlazeAndroidBinaryNormalBuildRunContext implements BlazeAndroidRunC
     return BlazeAndroidBinaryApplicationLaunchTaskProvider.getApplicationLaunchTask(
         project,
         applicationIdProvider,
-        deployInfo.getMergedManifest(),
+        deployInfo.getMergedManifestFile(),
         configState,
         startActivityFlagsProvider,
         processHandlerLaunchStatus);
