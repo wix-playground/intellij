@@ -128,6 +128,7 @@ class BlazeGoImportResolver implements GoImportResolver {
     return doResolve(goPackage, reference.getIndex());
   }
 
+  @Nullable
   static ResolveResult[] doResolve(BlazeGoPackage goPackage, int index) {
     return Stream.of(goPackage)
         .map(BlazeGoPackage::getImportReferences)
@@ -215,7 +216,7 @@ class BlazeGoImportResolver implements GoImportResolver {
   }
 
   /** Redirects quick navigation text on the fake file system item back to the build rule. */
-  static class GoPackageDocumentationProvider extends DocumentationProviderEx {
+  private static class GoPackageDocumentationProvider extends DocumentationProviderEx {
     @Nullable
     @Override
     public String getQuickNavigateInfo(PsiElement element, PsiElement originalElement) {
