@@ -64,7 +64,7 @@ java_library(
         "//java/com/google/devtools/intellij/blaze/plugin/aswb:__pkg__",
         "//java/com/google/devtools/intellij/blaze/plugin/ijwb:__pkg__",
     ],
-    deps = ["//third_party/java/jdk:langtools"],
+    deps = [":jdk_tools_jar"],
 )
 
 # This is provided by the IDE at runtime
@@ -172,7 +172,12 @@ java_binary(
 java_binary(
     name = "jdk_tools_lib",
     main_class = "None",
-    runtime_deps = ["//third_party/java/jdk:langtools"],
+    runtime_deps = [":jdk_tools_jar"],
+)
+
+java_import(
+    name = "jdk_tools_jar",
+    jars = ["@local_jdk//:langtools"],
 )
 
 java_binary(
