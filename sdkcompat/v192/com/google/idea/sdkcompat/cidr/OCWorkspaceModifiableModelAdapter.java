@@ -31,11 +31,9 @@ import com.jetbrains.cidr.lang.workspace.OCResolveConfigurationImpl;
 import com.jetbrains.cidr.lang.workspace.OCWorkspace.ModifiableModel;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceImpl;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceImplUtilKt;
-import com.jetbrains.cidr.lang.workspace.compiler.CachedTempFilesPool;
 import com.jetbrains.cidr.lang.workspace.compiler.CompilerInfoCache;
 import com.jetbrains.cidr.lang.workspace.compiler.CompilerInfoCache.Message;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
-import com.jetbrains.cidr.lang.workspace.compiler.TempFilesPool;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -138,11 +136,10 @@ public class OCWorkspaceModifiableModelAdapter {
     ExecutorService compilerSettingExecutor =
         AppExecutorUtil.createBoundedApplicationPoolExecutor(
             "Compiler Settings Collector", Runtime.getRuntime().availableProcessors());
-    TempFilesPool tempFilesPool = new CachedTempFilesPool();
     for (OCResolveConfiguration.ModifiableModel config : model.getConfigurations()) {
       compilerSettingsTasks.add(
           OCWorkspaceImplUtilKt.collectCompilerSettingsAsync(
-              config, toolEnvironment, compilerInfoCache, compilerSettingExecutor, tempFilesPool));
+              config, toolEnvironment, compilerInfoCache, compilerSettingExecutor));
     }
     ImmutableList.Builder<String> issues = ImmutableList.builder();
     for (Future<List<Message>> task : compilerSettingsTasks) {
@@ -159,7 +156,6 @@ public class OCWorkspaceModifiableModelAdapter {
         logger.error("Error getting compiler settings, cancelling", e);
       }
     }
-    tempFilesPool.clean();
     return issues.build();
   }
 }
