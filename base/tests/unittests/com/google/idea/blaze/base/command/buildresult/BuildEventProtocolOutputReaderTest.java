@@ -769,9 +769,15 @@ public class BuildEventProtocolOutputReaderTest extends BlazeTestCase {
   }
 
   private BuildEventStreamProtos.File toFileEvent(String filePath) {
+    return toFileEvent("ignored name", fileUri(filePath), ImmutableList.of());
+  }
+
+  private static BuildEventStreamProtos.File toFileEvent(
+      String name, String uri, List<String> pathPrefixes) {
     return BuildEventStreamProtos.File.newBuilder()
-        .setUri(fileUri(filePath))
-        .setName(filePath)
+        .setUri(uri)
+        .setName(name)
+        .addAllPathPrefix(pathPrefixes)
         .build();
   }
 
