@@ -31,7 +31,6 @@ import com.intellij.psi.PsiFile;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -149,11 +148,7 @@ public interface TestTargetHeuristic {
         filteredTargets = matches;
       }
     }
-    // finally order by syncTime (if available), returning the most recently synced
-    return filteredTargets.stream()
-        .max(
-            Comparator.comparing(t -> t.syncTime, Comparator.nullsFirst(Comparator.naturalOrder())))
-        .orElse(null);
+    return filteredTargets.get(0);
   }
 
   /** Returns true if the rule and source file match, according to this heuristic. */
