@@ -53,8 +53,7 @@ class PendingAsyncTestContext extends TestContext implements PendingRunConfigura
       PsiElement sourceElement,
       ImmutableList<BlazeFlagsModification> blazeFlags,
       @Nullable String description) {
-    Project project = sourceElement.getProject();
-    String buildSystem = Blaze.buildSystemName(project);
+    String buildSystem = Blaze.buildSystemName(sourceElement.getProject());
     String progressMessage = String.format("Searching for %s target", buildSystem);
     ListenableFuture<RunConfigurationContext> future =
         Futures.transform(
@@ -66,7 +65,7 @@ class PendingAsyncTestContext extends TestContext implements PendingRunConfigura
               }
               RunConfigurationContext context =
                   PendingWebTestContext.findWebTestContext(
-                      project, supportedExecutors, t, sourceElement, blazeFlags, description);
+                      supportedExecutors, t, sourceElement, blazeFlags, description);
               return context != null
                   ? context
                   : new KnownTargetTestContext(t, sourceElement, blazeFlags, description);
