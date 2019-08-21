@@ -15,20 +15,14 @@
  */
 package com.google.idea.sdkcompat.cidr;
 
-import com.intellij.openapi.vfs.VirtualFile;
-import java.io.File;
-import javax.annotation.Nullable;
+import com.jetbrains.cidr.lang.workspace.OCWorkspaceFileMapper;
+import com.jetbrains.cidr.lang.workspace.OCWorkspaceImplUtilKt;
 
 /** Compat interface for {@link WorkspaceFileMapper}. */
 public class OCWorkspaceFileMapperCompat {
-  /** Present only for compatibility with v191, unused in v192. */
+  /** Returns a new {@link WorkspaceFileMapper}. */
   public static WorkspaceFileMapper create() {
-    return new WorkspaceFileMapper() {
-      @Nullable
-      @Override
-      public VirtualFile map(File file) {
-        return null;
-      }
-    };
+    OCWorkspaceFileMapper mapper = OCWorkspaceImplUtilKt.createFileMapper();
+    return mapper::map;
   }
 }
