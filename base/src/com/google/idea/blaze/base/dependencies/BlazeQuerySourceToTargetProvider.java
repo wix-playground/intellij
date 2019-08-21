@@ -17,6 +17,8 @@ package com.google.idea.blaze.base.dependencies;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.idea.blaze.base.async.executor.ProgressiveTaskWithProgressIndicator;
 import com.google.idea.blaze.base.async.process.ExternalTask;
 import com.google.idea.blaze.base.async.process.LineProcessingOutputStream;
 import com.google.idea.blaze.base.async.process.PrintOutputLineProcessor;
@@ -28,6 +30,7 @@ import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.Scope;
 import com.google.idea.blaze.base.scope.scopes.IdeaLogScope;
+import com.google.idea.blaze.base.scope.scopes.ProgressIndicatorScope;
 import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.sync.sharding.QueryResultLineProcessor;
 import com.google.idea.blaze.base.sync.workspace.WorkspaceHelper;
@@ -37,9 +40,7 @@ import com.google.idea.common.experiments.BoolExperiment;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.Future;
 import javax.annotation.Nullable;
-import org.jetbrains.ide.PooledThreadExecutor;
 
 /**
  * Given a source file, runs a blaze query invocation to find the direct rdeps of that file.
@@ -56,7 +57,7 @@ public class BlazeQuerySourceToTargetProvider implements SourceToTargetProvider 
       new BoolExperiment("use.blaze.query.for.rdeps", false);
 
   @Override
-  public Future<List<TargetInfo>> getTargetsBuildingSourceFile(
+  public ListenableFuture<List<TargetInfo>> getTargetsBuildingSourceFile(
       Project project, String workspaceRelativePath) {
     if (!enabled.getValue()) {
       return Futures.immediateFuture(null);
@@ -65,13 +66,18 @@ public class BlazeQuerySourceToTargetProvider implements SourceToTargetProvider 
     if (label == null) {
       return Futures.immediateFuture(null);
     }
-    return PooledThreadExecutor.INSTANCE.submit(
-        () ->
-            Scope.root(
-                context -> {
-                  context.push(new IdeaLogScope());
-                  return runDirectRdepsQuery(project, label, context);
-                }));
+    String buildSystem = Blaze.buildSystemName(project);
+    return ProgressiveTaskWithProgressIndicator.builder(
+            project, String.format("Running %s query", buildSystem))
+        .submitTaskWithResult(
+            (progressive) ->
+                Scope.root(
+                    context -> {
+                      context
+                          .push(new ProgressIndicatorScope(progressive))
+                          .push(new IdeaLogScope());
+                      return runDirectRdepsQuery(project, label, context);
+                    }));
   }
 
   @Nullable
