@@ -93,7 +93,7 @@ final class SyncPhaseCoordinator {
     ALL_PHASES, // running all sync phases synchronously
   }
 
-  private static class UpdatePhaseTask {
+  static class UpdatePhaseTask {
     final Instant startTime;
     final BlazeSyncParams syncParams;
     @Nullable final SyncProjectState projectState;
@@ -246,9 +246,7 @@ final class SyncPhaseCoordinator {
       }
       SyncProjectState projectState = ProjectStateSyncTask.collectProjectState(project, context);
       BlazeSyncBuildResult buildResult =
-          projectState != null
-              ? BuildPhaseSyncTask.runBuildPhase(project, params, projectState, context)
-              : BlazeSyncBuildResult.builder().build();
+          BuildPhaseSyncTask.runBuildPhase(project, params, projectState, context);
       UpdatePhaseTask task =
           new UpdatePhaseTask(
               startTime,
