@@ -17,7 +17,6 @@ package com.google.idea.blaze.base.dependencies;
 
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.sync.projectview.ImportRoots;
-import com.google.idea.blaze.base.sync.workspace.WorkspacePathResolver;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.project.Project;
 import java.util.Arrays;
@@ -45,12 +44,9 @@ public interface DirectoryToTargetProvider {
    */
   @Nullable
   static List<TargetInfo> expandDirectoryTargets(
-      Project project,
-      ImportRoots directories,
-      WorkspacePathResolver pathResolver,
-      BlazeContext context) {
+      Project project, ImportRoots directories, BlazeContext context) {
     return Arrays.stream(EP_NAME.getExtensions())
-        .map(p -> p.doExpandDirectoryTargets(project, directories, pathResolver, context))
+        .map(p -> p.doExpandDirectoryTargets(project, directories, context))
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
@@ -62,8 +58,5 @@ public interface DirectoryToTargetProvider {
    */
   @Nullable
   List<TargetInfo> doExpandDirectoryTargets(
-      Project project,
-      ImportRoots directories,
-      WorkspacePathResolver pathResolver,
-      BlazeContext context);
+      Project project, ImportRoots directories, BlazeContext context);
 }
