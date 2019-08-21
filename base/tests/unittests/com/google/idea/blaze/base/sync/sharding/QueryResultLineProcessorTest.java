@@ -22,14 +22,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.idea.blaze.base.BlazeTestCase;
 import com.google.idea.blaze.base.dependencies.TargetInfo;
 import com.google.idea.blaze.base.model.primitives.Label;
-import com.google.idea.blaze.base.query.BlazeQueryLabelKindParser;
 import com.google.idea.common.experiments.ExperimentService;
 import com.google.idea.common.experiments.MockExperimentService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link BlazeQueryLabelKindParser}. */
+/** Unit tests for {@link QueryResultLineProcessor}. */
 @RunWith(JUnit4.class)
 public class QueryResultLineProcessorTest extends BlazeTestCase {
 
@@ -40,7 +39,7 @@ public class QueryResultLineProcessorTest extends BlazeTestCase {
 
   @Test
   public void testRecognizesStandardResultLines() {
-    BlazeQueryLabelKindParser processor = new BlazeQueryLabelKindParser(x -> true);
+    QueryResultLineProcessor processor = new QueryResultLineProcessor(x -> true);
 
     processor.processLine("css_library rule //java/com/google/foo/styles:global");
     processor.processLine("java_library rule //java/com/google/bar/console:runtime_deps");
@@ -57,7 +56,7 @@ public class QueryResultLineProcessorTest extends BlazeTestCase {
 
   @Test
   public void testIgnoresNonRules() {
-    BlazeQueryLabelKindParser processor = new BlazeQueryLabelKindParser(x -> true);
+    QueryResultLineProcessor processor = new QueryResultLineProcessor(x -> true);
 
     processor.processLine("generated file //java/com/google/foo:libthrowable_utils.jar");
     processor.processLine("source file //java/com/google/foo:BUILD");
@@ -71,8 +70,8 @@ public class QueryResultLineProcessorTest extends BlazeTestCase {
   public void testFilterRuleTypes() {
     ImmutableSet<String> acceptedRuleTypes =
         ImmutableSet.of("java_library", "custom_type", "sh_test");
-    BlazeQueryLabelKindParser processor =
-        new BlazeQueryLabelKindParser(t -> acceptedRuleTypes.contains(t.ruleType));
+    QueryResultLineProcessor processor =
+        new QueryResultLineProcessor(t -> acceptedRuleTypes.contains(t.ruleType));
 
     processor.processLine("css_library rule //java/com/google/foo/styles:global");
     processor.processLine("java_library rule //java/com/google/bar/console:runtime_deps");
@@ -99,8 +98,8 @@ public class QueryResultLineProcessorTest extends BlazeTestCase {
         ImmutableSet.of("java_library", "custom_type", "sh_test");
     ImmutableSet<String> explicitTargets = ImmutableSet.of("//java/com/google/foo/styles:global");
 
-    BlazeQueryLabelKindParser processor =
-        new BlazeQueryLabelKindParser(
+    QueryResultLineProcessor processor =
+        new QueryResultLineProcessor(
             t -> explicitTargets.contains(t.label) || acceptedRuleTypes.contains(t.ruleType));
 
     processor.processLine("css_library rule //java/com/google/foo/styles:global");
