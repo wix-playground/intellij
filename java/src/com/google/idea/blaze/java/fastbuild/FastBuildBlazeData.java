@@ -150,8 +150,6 @@ public abstract class FastBuildBlazeData {
 
     public abstract Optional<Label> launcher();
 
-    public abstract boolean swigdeps();
-
     public abstract ImmutableList<String> annotationProcessorClassNames();
 
     public abstract ImmutableList<ArtifactLocation> annotationProcessorClasspath();
@@ -171,7 +169,6 @@ public abstract class FastBuildBlazeData {
           .setTestClass(emptyToNull(proto.getTestClass()))
           .setTestSize(emptyToNull(proto.getTestSize()))
           .setLauncher(launcher)
-          .setSwigdeps(proto.getSwigdeps())
           .setAnnotationProcessorClassNames(proto.getAnnotationProcessorClassNamesList())
           .setAnnotationProcessorClasspath(annotationProcessorClasspath)
           .setJvmFlags(proto.getJvmFlagsList())
@@ -180,7 +177,6 @@ public abstract class FastBuildBlazeData {
 
     public static Builder builder() {
       return new AutoValue_FastBuildBlazeData_JavaInfo.Builder()
-          .setSwigdeps(true)
           .setSources(ImmutableList.of())
           .setAnnotationProcessorClassNames(ImmutableList.of())
           .setAnnotationProcessorClasspath(ImmutableList.of())
@@ -198,8 +194,6 @@ public abstract class FastBuildBlazeData {
       public abstract Builder setTestSize(@Nullable String testSize);
 
       public abstract Builder setLauncher(@Nullable Label label);
-
-      public abstract Builder setSwigdeps(boolean swigdeps);
 
       public abstract Builder setAnnotationProcessorClassNames(
           Collection<String> annotationProcessorClassNames);
