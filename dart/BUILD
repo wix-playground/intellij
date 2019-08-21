@@ -6,6 +6,7 @@ load("//testing:test_defs.bzl", "intellij_unit_test_suite")
 java_library(
     name = "dart",
     srcs = glob(["src/**/*.java"]),
+    resources = glob(["resources/**/*"]),
     deps = [
         "//base",
         "//common/experiments",
