@@ -56,7 +56,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.Processor;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -259,7 +258,7 @@ public class BlazeGoPackage extends GoPackage {
 
   @Override
   public Collection<PsiFile> files() {
-    if (cachedGoFiles == null || cachedGoFiles.stream().anyMatch(f -> !f.isValid())) {
+    if (cachedGoFiles == null) {
       PsiManager psiManager = PsiManager.getInstance(getProject());
       cachedGoFiles =
           files.stream()
@@ -307,7 +306,7 @@ public class BlazeGoPackage extends GoPackage {
   @Nullable
   @Override
   public PsiElement getNavigableElement() {
-    if (cachedNavigable == null || !cachedNavigable.isValid()) {
+    if (cachedNavigable == null) {
       Project project = getProject();
       BuildReferenceManager buildReferenceManager = BuildReferenceManager.getInstance(project);
       cachedNavigable = buildReferenceManager.resolveLabel(label);
@@ -371,10 +370,7 @@ public class BlazeGoPackage extends GoPackage {
    */
   @Nullable
   PsiElement[] getImportReferences() {
-    if (cachedImportReferences == null
-        || Arrays.stream(cachedImportReferences)
-            .filter(Objects::nonNull)
-            .anyMatch(e -> !e.isValid())) {
+    if (cachedImportReferences == null) {
       PsiElement navigable = getNavigableElement();
       if (navigable != null) {
         cachedImportReferences = getImportReferences(label, navigable, importPath);
