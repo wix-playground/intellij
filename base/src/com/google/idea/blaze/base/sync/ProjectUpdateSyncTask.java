@@ -152,8 +152,9 @@ final class ProjectUpdateSyncTask {
   private void run(BlazeContext context) throws SyncCanceledException, SyncFailedException {
     SyncState.Builder syncStateBuilder = new SyncState.Builder();
 
-    ProjectTargetData targetData = updateTargetData(context, oldProjectData);
-    if (targetData == null) {
+    ProjectTargetData targetData = updateTargetMap(context, oldProjectData);
+    TargetMap targetMap = targetData.getTargetMap();
+    if (targetMap == null) {
       context.setHasError();
       throw new SyncFailedException();
     }
@@ -161,7 +162,6 @@ final class ProjectUpdateSyncTask {
       syncStateBuilder.put(targetData.getIdeInterfaceState());
     }
     syncStateBuilder.put(targetData.getRemoteOutputs());
-    TargetMap targetMap = targetData.getTargetMap();
     context.output(PrintOutput.log("Target map size: " + targetMap.targets().size()));
 
     RemoteOutputArtifacts oldRemoteState = RemoteOutputArtifacts.fromProjectData(oldProjectData);
@@ -313,8 +313,7 @@ final class ProjectUpdateSyncTask {
         });
   }
 
-  @Nullable
-  private ProjectTargetData updateTargetData(
+  private ProjectTargetData updateTargetMap(
       BlazeContext parentContext, @Nullable BlazeProjectData oldProjectData) {
     boolean mergeWithOldState = !syncParams.addProjectViewTargets;
     return Scope.push(
