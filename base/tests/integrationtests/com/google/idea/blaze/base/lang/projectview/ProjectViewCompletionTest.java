@@ -63,9 +63,9 @@ public class ProjectViewCompletionTest extends ProjectViewIntegrationTestCase {
 
   @Test
   public void testColonAndNewLineAndIndentInsertedAfterListSection() {
-    setInput("sync_fla<caret>");
+    setInput("direc<caret>");
     assertThat(editorTest.completeIfUnique()).isTrue();
-    assertResult("sync_flags:", "  <caret>");
+    assertResult("directories:", "  <caret>");
   }
 
   @Test

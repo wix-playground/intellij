@@ -31,7 +31,6 @@ import com.google.idea.blaze.base.projectview.section.ScalarSection;
 import com.google.idea.blaze.base.projectview.section.Section;
 import com.google.idea.blaze.base.projectview.section.SectionParser;
 import com.google.idea.blaze.base.projectview.section.sections.AdditionalLanguagesSection;
-import com.google.idea.blaze.base.projectview.section.sections.AutomaticallyDeriveTargetsSection;
 import com.google.idea.blaze.base.projectview.section.sections.BazelBinarySection;
 import com.google.idea.blaze.base.projectview.section.sections.BuildFlagsSection;
 import com.google.idea.blaze.base.projectview.section.sections.DirectoryEntry;
@@ -101,7 +100,6 @@ public class ProjectViewSetTest extends BlazeTestCase {
                     .add(
                         ListSection.builder(RunConfigurationsSection.KEY)
                             .add(new WorkspacePath("test")))
-                    .add(ScalarSection.builder(AutomaticallyDeriveTargetsSection.KEY).set(false))
                     .add(ScalarSection.builder(ShardBlazeBuildsSection.KEY).set(false))
                     .add(ScalarSection.builder(TargetShardSizeSection.KEY).set(500))
                     .add(
