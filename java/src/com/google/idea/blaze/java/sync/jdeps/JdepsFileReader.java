@@ -15,17 +15,15 @@
  */
 package com.google.idea.blaze.java.sync.jdeps;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.devtools.build.lib.view.proto.Deps;
-import com.google.devtools.build.lib.view.proto.Deps.Dependency;
 import com.google.idea.blaze.base.async.FutureUtil;
 import com.google.idea.blaze.base.command.buildresult.BlazeArtifact;
 import com.google.idea.blaze.base.command.buildresult.OutputArtifact;
+import com.google.idea.blaze.base.filecache.ArtifactState;
 import com.google.idea.blaze.base.filecache.ArtifactsDiff;
 import com.google.idea.blaze.base.ideinfo.JavaIdeInfo;
 import com.google.idea.blaze.base.ideinfo.TargetIdeInfo;
@@ -39,7 +37,6 @@ import com.google.idea.blaze.base.scope.output.PrintOutput;
 import com.google.idea.blaze.base.scope.scopes.TimingScope;
 import com.google.idea.blaze.base.scope.scopes.TimingScope.EventType;
 import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
-import com.google.idea.blaze.java.sync.jdeps.JdepsState.JdepsData;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import java.io.FileNotFoundException;
@@ -96,7 +93,7 @@ public class JdepsFileReader {
       return null;
     }
     syncStateBuilder.put(jdepsState);
-    return jdepsState.getJdepsMap()::get;
+    return jdepsState.targetToJdeps::get;
   }
 
   @Nullable
@@ -106,6 +103,12 @@ public class JdepsFileReader {
       @Nullable JdepsState oldState,
       Collection<TargetIdeInfo> targetsToLoad)
       throws InterruptedException, ExecutionException {
+    JdepsState.Builder state = JdepsState.builder();
+    if (oldState != null) {
+      state.targetToJdeps = Maps.newHashMap(oldState.targetToJdeps);
+      state.artifactToTargetMap = Maps.newHashMap(oldState.artifactToTargetMap);
+    }
+
     Map<OutputArtifact, TargetKey> fileToTargetMap = Maps.newHashMap();
     for (TargetIdeInfo target : targetsToLoad) {
       BlazeArtifact output = resolveJdepsOutput(decoder, target);
@@ -116,7 +119,8 @@ public class JdepsFileReader {
 
     ArtifactsDiff diff =
         ArtifactsDiff.diffArtifacts(
-            oldState != null ? oldState.getArtifactState() : null, fileToTargetMap.keySet());
+            oldState != null ? oldState.artifactState : null, fileToTargetMap.keySet());
+    state.artifactState = diff.getNewState();
 
     // TODO: handle prefetching for arbitrary OutputArtifacts
     ListenableFuture<?> fetchFuture =
@@ -130,6 +134,13 @@ public class JdepsFileReader {
       return null;
     }
 
+    for (ArtifactState removedFile : diff.getRemovedOutputs()) {
+      TargetKey targetKey = state.artifactToTargetMap.remove(removedFile.getKey());
+      if (targetKey != null) {
+        state.targetToJdeps.remove(targetKey);
+      }
+    }
+
     AtomicLong totalSizeLoaded = new AtomicLong(0);
 
     List<ListenableFuture<Result>> futures = Lists.newArrayList();
@@ -140,48 +151,38 @@ public class JdepsFileReader {
                 totalSizeLoaded.addAndGet(updatedFile.getLength());
                 try (InputStream inputStream = updatedFile.getInputStream()) {
                   Deps.Dependencies dependencies = Deps.Dependencies.parseFrom(inputStream);
-                  if (dependencies == null) {
-                    return null;
+                  if (dependencies != null) {
+                    List<String> dependencyStringList = Lists.newArrayList();
+                    for (Deps.Dependency dependency : dependencies.getDependencyList()) {
+                      // We only want explicit or implicit deps that were
+                      // actually resolved by the compiler, not ones that are
+                      // available for use in the same package
+                      if (dependency.getKind() == Deps.Dependency.Kind.EXPLICIT
+                          || dependency.getKind() == Deps.Dependency.Kind.IMPLICIT) {
+                        dependencyStringList.add(dependency.getPath());
+                      }
+                    }
+                    TargetKey targetKey = fileToTargetMap.get(updatedFile);
+                    return new Result(updatedFile, targetKey, dependencyStringList);
                   }
-                  List<String> deps =
-                      dependencies.getDependencyList().stream()
-                          .filter(dep -> relevantDep(dep))
-                          .map(Dependency::getPath)
-                          .collect(toImmutableList());
-                  TargetKey targetKey = fileToTargetMap.get(updatedFile);
-                  return new Result(updatedFile, targetKey, deps);
                 } catch (FileNotFoundException e) {
                   logger.info("Could not open jdeps file: " + updatedFile);
-                  return null;
                 }
+                return null;
               }));
     }
-
-    JdepsState.Builder state = JdepsState.builder();
-    if (oldState != null) {
-      state.list.addAll(oldState.data);
-    }
-    state.removeArtifacts(diff.getRemovedOutputs());
-    for (Result result : Futures.allAsList(futures).get()) {
-      if (result != null) {
-        state.list.add(
-            JdepsData.create(
-                result.targetKey, result.dependencies, result.output.toArtifactState()));
+      for (Result result : Futures.allAsList(futures).get()) {
+        if (result != null) {
+        state.artifactToTargetMap.put(result.output.getKey(), result.targetKey);
+          state.targetToJdeps.put(result.targetKey, result.dependencies);
+        }
       }
-    }
     context.output(
         PrintOutput.log(
             String.format(
                 "Loaded %d jdeps files, total size %dkB",
                 diff.getUpdatedOutputs().size(), totalSizeLoaded.get() / 1024)));
     return state.build();
-  }
-
-  private static boolean relevantDep(Deps.Dependency dep) {
-    // we only want explicit or implicit deps that were actually resolved by the compiler, not ones
-    // that are available for use in the same package
-    return dep.getKind() == Deps.Dependency.Kind.EXPLICIT
-        || dep.getKind() == Deps.Dependency.Kind.IMPLICIT;
   }
 
   @Nullable
