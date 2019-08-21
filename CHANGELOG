@@ -1,7 +1,3 @@
-v2019.08.19
-===========
-* Add support for starlark debugging.
-
 v2019.08.05
 ===========
 * Bug fixes and internal cleanup.
