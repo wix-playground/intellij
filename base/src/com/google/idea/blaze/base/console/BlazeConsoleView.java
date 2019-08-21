@@ -48,8 +48,6 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import java.awt.Component;
-import java.awt.Container;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
-import javax.swing.LayoutFocusTraversalPolicy;
 
 /** Console view showing blaze output. */
 public class BlazeConsoleView implements Disposable {
@@ -185,18 +182,7 @@ public class BlazeConsoleView implements Disposable {
 
     JComponent layoutComponent = layoutUi.getComponent();
 
-    layoutComponent.setFocusTraversalPolicyProvider(true);
-    layoutComponent.setFocusTraversalPolicy(
-        new LayoutFocusTraversalPolicy() {
-          @Override
-          public Component getDefaultComponent(Container container) {
-            if (container.equals(layoutComponent)) {
-              return consoleView.getPreferredFocusableComponent();
-            }
-            return super.getDefaultComponent(container);
-          }
-        });
-
+    //noinspection ConstantConditions
     Content content =
         ContentFactory.SERVICE.getInstance().createContent(layoutComponent, null, true);
     content.setCloseable(false);
