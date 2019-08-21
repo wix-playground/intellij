@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.util.BuildNumber;
 import java.lang.reflect.Field;
 import java.util.List;
 import org.junit.rules.ExternalResource;
@@ -48,13 +47,7 @@ public class DisablePluginsTestRule extends ExternalResource {
       // disabledPluginIds matches the existing value of ourDisabledPlugins.
       throw new RuntimeException("Cannot disable plugins; they've already been loaded.");
     }
-    int baselineVersion =
-        BuildNumber.fromString(PluginManagerCore.BUILD_NUMBER).getBaselineVersion();
-    if (baselineVersion > 191) {
-      disabledPluginIds.forEach(PluginManagerCore::disablePlugin);
-    } else {
-      forceSetDisabledPluginsField(disabledPluginIds);
-    }
+    forceSetDisabledPluginsField(disabledPluginIds);
   }
 
   @Override
@@ -66,9 +59,7 @@ public class DisablePluginsTestRule extends ExternalResource {
   /**
    * Access the 'ourDisabledPlugins' field in {@link PluginManagerCore} via reflection, and set it.
    * We can't simply populate a 'disabled_plugins.txt' file (the normal mechanism for disabling
-   * plugins), because that is ignored during tests).
-   *
-   * <p>#api191: remove when 191 and earlier aren't supported.
+   * plugins), because that is ignored during tests.
    */
   private static void forceSetDisabledPluginsField(List<String> disabledPlugins)
       throws NoSuchFieldException, IllegalAccessException {
