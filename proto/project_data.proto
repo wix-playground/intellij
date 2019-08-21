@@ -120,13 +120,10 @@ message LocalFileOrOutputArtifact {
 
 // an output artifact which exists on the local file system
 message LocalFile {
-  // the absolute file path. Deprecated: use relative_path instead, to be
-  // consistent with OutputArtifact
-  string path = 1 [deprecated = true];
+  // the absolute file path
+  string path = 1;
   // used to compare files with the same path
   int64 timestamp = 2;
-  // the blaze-out-relative path of this artifact
-  string relative_path = 3;
 }
 
 // an output artifact not necessarily available on the local file system

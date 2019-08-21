@@ -36,9 +36,7 @@ public interface OutputArtifact extends BlazeArtifact {
    *
    * <p>TODO(brendandouglas): remove this in favor of ArtifactState#getKey
    */
-  default String getKey() {
-    return getRelativePath();
-  }
+  String getKey();
 
   /**
    * Returns the {@link ArtifactState} for this output, used for serialization/diffing purposes. Can

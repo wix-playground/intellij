@@ -34,16 +34,12 @@ import java.util.function.Predicate;
 public final class BlazeIdeInterfaceState
     implements ProtoWrapper<ProjectData.BlazeIdeInterfaceState> {
 
-  /** A mapping from artifact key to {@link ArtifactState} for all targets built during sync. */
+  /**
+   * File strings here are any string uniquely identifying output artifacts. It's not used to
+   * re-derive an artifact location, though each artifact must map to a unique string.
+   */
   final ImmutableMap<String, ArtifactState> ideInfoFileState;
 
-  /**
-   * A mapping from artifact key to {@link TargetKey} for only those targets which were added to the
-   * target map.
-   *
-   * <p>This excludes targets for unsupported languages, and duplicates (targets built against
-   * multiple configurations).
-   */
   final ImmutableBiMap<String, TargetKey> ideInfoFileToTargetKey;
 
   private BlazeIdeInterfaceState(
@@ -54,9 +50,10 @@ public final class BlazeIdeInterfaceState
   }
 
   public static BlazeIdeInterfaceState fromProto(ProjectData.BlazeIdeInterfaceState proto) {
-    ImmutableMap<String, TargetKey> targets =
-        ProtoWrapper.map(
-            proto.getFileToTargetMap(), ArtifactState::migrateOldKeyFormat, TargetKey::fromProto);
+    ImmutableBiMap<String, TargetKey> targets =
+        ImmutableBiMap.copyOf(
+            ProtoWrapper.map(
+                proto.getFileToTargetMap(), Functions.identity(), TargetKey::fromProto));
     ImmutableMap.Builder<String, ArtifactState> artifacts = ImmutableMap.builder();
     for (LocalFileOrOutputArtifact output : proto.getIdeInfoFilesList()) {
       ArtifactState state = ArtifactState.fromProto(output);
@@ -65,7 +62,7 @@ public final class BlazeIdeInterfaceState
       }
       artifacts.put(state.getKey(), state);
     }
-    return new BlazeIdeInterfaceState(artifacts.build(), ImmutableBiMap.copyOf(targets));
+    return new BlazeIdeInterfaceState(artifacts.build(), targets);
   }
 
   @Override

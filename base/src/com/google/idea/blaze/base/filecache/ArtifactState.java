@@ -19,35 +19,11 @@ import com.google.devtools.intellij.model.ProjectData;
 import com.google.devtools.intellij.model.ProjectData.LocalFile;
 import com.google.devtools.intellij.model.ProjectData.LocalFileOrOutputArtifact;
 import com.google.idea.blaze.base.command.buildresult.BlazeArtifact;
-import java.io.File;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
 /** Used to diff blaze {@link BlazeArtifact}s from different builds. */
 public interface ArtifactState {
-
-  /**
-   * Migrates from a possibly-old {@link ArtifactState} key format to the latest format, which is
-   * consistent for local and remote output artifacts.
-   */
-  static String migrateOldKeyFormat(String key) {
-    // TODO(brendandouglas): remove this temporary migration code in November 2019
-    if (!key.startsWith(File.separator)) {
-      return key;
-    }
-    // try to parse the blaze-out-relative path
-    String pathComponent = String.format("%1$sblaze-out%1$s", File.separator);
-    int ix = key.indexOf(pathComponent);
-    if (ix == -1) {
-      pathComponent = String.format("%1$sbazel-out%1$s", File.separator);
-      ix = key.indexOf(pathComponent);
-    }
-    if (ix == -1) {
-      // fall back to returning the original key
-      return key;
-    }
-    return key.substring(ix + pathComponent.length());
-  }
 
   /**
    * A key uniquely identifying an artifact between builds. Different versions of an artifact
@@ -66,12 +42,8 @@ public interface ArtifactState {
   @Nullable
   static ArtifactState fromProto(LocalFileOrOutputArtifact proto) {
     if (proto.hasLocalFile()) {
-      LocalFile local = proto.getLocalFile();
-      String blazeOutPath =
-          !local.getRelativePath().isEmpty()
-              ? local.getRelativePath()
-              : migrateOldKeyFormat(local.getPath());
-      return new LocalFileState(blazeOutPath, proto.getLocalFile().getTimestamp());
+      return new LocalFileState(
+          proto.getLocalFile().getPath(), proto.getLocalFile().getTimestamp());
     }
     if (proto.hasArtifact()) {
       ProjectData.OutputArtifact output = proto.getArtifact();
@@ -83,17 +55,17 @@ public interface ArtifactState {
 
   /** Serialization state related to local files. */
   class LocalFileState implements ArtifactState {
-    private final String blazeOutPath;
+    private final String absolutePath;
     private final long timestamp;
 
-    public LocalFileState(String blazeOutPath, long timestamp) {
-      this.blazeOutPath = blazeOutPath;
+    public LocalFileState(String absolutePath, long timestamp) {
+      this.absolutePath = absolutePath;
       this.timestamp = timestamp;
     }
 
     @Override
     public String getKey() {
-      return blazeOutPath;
+      return absolutePath;
     }
 
     @Override
@@ -104,13 +76,13 @@ public interface ArtifactState {
     @Override
     public LocalFileOrOutputArtifact serializeToProto() {
       return LocalFileOrOutputArtifact.newBuilder()
-          .setLocalFile(LocalFile.newBuilder().setPath(blazeOutPath).setTimestamp(timestamp))
+          .setLocalFile(LocalFile.newBuilder().setPath(absolutePath).setTimestamp(timestamp))
           .build();
     }
 
     @Override
     public int hashCode() {
-      return blazeOutPath.hashCode();
+      return absolutePath.hashCode();
     }
 
     @Override
@@ -121,7 +93,7 @@ public interface ArtifactState {
       if (!(obj instanceof LocalFileState)) {
         return false;
       }
-      return blazeOutPath.equals(((LocalFileState) obj).blazeOutPath);
+      return absolutePath.equals(((LocalFileState) obj).absolutePath);
     }
   }
 
