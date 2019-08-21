@@ -134,8 +134,7 @@ public class MockBlazeProjectDataBuilder {
         this.syncState != null ? this.syncState : new SyncState(ImmutableMap.of());
 
     return new BlazeProjectData(
-        new ProjectTargetData(
-            targetMap, /* ideInterfaceState= */ null, RemoteOutputArtifacts.EMPTY),
+        targetMap,
         blazeInfo,
         blazeVersionData,
         workspacePathResolver,

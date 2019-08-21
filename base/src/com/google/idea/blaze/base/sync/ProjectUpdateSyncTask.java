@@ -157,11 +157,15 @@ final class ProjectUpdateSyncTask {
       context.setHasError();
       throw new SyncFailedException();
     }
-    TargetMap targetMap = targetData.targetMap;
+    if (targetData.getIdeInterfaceState() != null) {
+      syncStateBuilder.put(targetData.getIdeInterfaceState());
+    }
+    syncStateBuilder.put(targetData.getRemoteOutputs());
+    TargetMap targetMap = targetData.getTargetMap();
     context.output(PrintOutput.log("Target map size: " + targetMap.targets().size()));
 
     RemoteOutputArtifacts oldRemoteState = RemoteOutputArtifacts.fromProjectData(oldProjectData);
-    RemoteOutputArtifacts newRemoteState = targetData.remoteOutputs;
+    RemoteOutputArtifacts newRemoteState = targetData.getRemoteOutputs();
 
     ArtifactLocationDecoder artifactLocationDecoder =
         new ArtifactLocationDecoderImpl(
@@ -210,7 +214,7 @@ final class ProjectUpdateSyncTask {
 
     BlazeProjectData newProjectData =
         new BlazeProjectData(
-            targetData,
+            targetMap,
             projectState.getBlazeInfo(),
             projectState.getBlazeVersionData(),
             projectState.getWorkspacePathResolver(),

@@ -25,11 +25,12 @@ import com.google.devtools.intellij.model.ProjectData.LocalFileOrOutputArtifact;
 import com.google.idea.blaze.base.filecache.ArtifactState;
 import com.google.idea.blaze.base.ideinfo.ProtoWrapper;
 import com.google.idea.blaze.base.ideinfo.TargetKey;
+import com.google.idea.blaze.base.model.SyncData;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /** Sync state for aspect output files, and their mapping to targets. */
-public final class BlazeIdeInterfaceState
-    implements ProtoWrapper<ProjectData.BlazeIdeInterfaceState> {
+public final class BlazeIdeInterfaceState implements SyncData<ProjectData.BlazeIdeInterfaceState> {
 
   /**
    * File strings here are any string uniquely identifying output artifacts. It's not used to
@@ -46,7 +47,7 @@ public final class BlazeIdeInterfaceState
     this.ideInfoFileToTargetKey = ImmutableBiMap.copyOf(ideInfoFileToTargetKey);
   }
 
-  public static BlazeIdeInterfaceState fromProto(ProjectData.BlazeIdeInterfaceState proto) {
+  private static BlazeIdeInterfaceState fromProto(ProjectData.BlazeIdeInterfaceState proto) {
     ImmutableBiMap<String, TargetKey> targets =
         ImmutableBiMap.copyOf(
             ProtoWrapper.map(
@@ -102,6 +103,21 @@ public final class BlazeIdeInterfaceState
 
     BlazeIdeInterfaceState build() {
       return new BlazeIdeInterfaceState(ideInfoFileState, ideInfoToTargetKey);
+    }
+  }
+
+  @Override
+  public void insert(ProjectData.SyncState.Builder builder) {
+    builder.setBlazeIdeInterfaceState(toProto());
+  }
+
+  static class Extractor implements SyncData.Extractor<BlazeIdeInterfaceState> {
+    @Nullable
+    @Override
+    public BlazeIdeInterfaceState extract(ProjectData.SyncState syncState) {
+      return syncState.hasBlazeIdeInterfaceState()
+          ? BlazeIdeInterfaceState.fromProto(syncState.getBlazeIdeInterfaceState())
+          : null;
     }
   }
 }
