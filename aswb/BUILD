@@ -137,6 +137,7 @@ intellij_integration_test_suite(
             "tests/integrationtests/com/google/idea/blaze/android/AswbGotoDeclarationTest.java",
         ],
     }),
+    platform_prefix = "AndroidStudio",
     required_plugins = "com.google.idea.bazel.aswb",
     test_package_root = "com.google.idea.blaze.android",
     runtime_deps = [
@@ -166,6 +167,7 @@ intellij_integration_test_suite(
 intellij_integration_test_suite(
     name = "NdkDependenciesTest",
     srcs = ["tests/integrationtests/com/google/idea/blaze/android/plugin/NdkDependenciesTest.java"],
+    platform_prefix = "AndroidStudio",
     required_plugins = "com.google.idea.bazel.aswb",
     test_package_root = "com.google.idea.blaze.android",
     runtime_deps = [
