@@ -16,7 +16,6 @@
 package com.google.idea.blaze.base;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.base.Joiner;
 import com.google.idea.blaze.base.io.FileOperationProvider;
@@ -157,12 +156,7 @@ public class TestFileSystem {
       return filePath;
     }
     String tempDirPath = getRootDir();
-    assertWithMessage(
-            String.format(
-                "Invalid absolute file path. '%s' is not underneath the test file system root '%s'",
-                filePath, tempDirPath))
-        .that(FileUtil.isAncestor(tempDirPath, filePath, true))
-        .isTrue();
+    assertThat(FileUtil.isAncestor(tempDirPath, filePath, true)).isTrue();
     return FileUtil.getRelativePath(tempDirPath, filePath, File.separatorChar);
   }
 

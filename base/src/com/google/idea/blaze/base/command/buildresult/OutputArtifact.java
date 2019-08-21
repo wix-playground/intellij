@@ -15,20 +15,25 @@
  */
 package com.google.idea.blaze.base.command.buildresult;
 
+import com.google.errorprone.annotations.MustBeClosed;
+import com.google.idea.blaze.base.command.info.BlazeConfigurationHandler;
 import com.google.idea.blaze.base.filecache.ArtifactState;
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import javax.annotation.Nullable;
 
-/** A blaze output artifact, generated during some build action. */
-public interface OutputArtifact extends BlazeArtifact {
+/** An output artifact from a blaze build. */
+public interface OutputArtifact {
 
   /** Returns the length of the underlying file in bytes, or 0 if this can't be determined. */
   long getLength();
 
   /** The path component related to the build configuration. */
-  String getConfigurationMnemonic();
+  String getBlazeConfigurationMnemonic(BlazeConfigurationHandler handler);
 
-  /** The blaze-out-relative path. */
-  String getRelativePath();
+  /** A buffered input stream providing the contents of this artifact. */
+  @MustBeClosed
+  BufferedInputStream getInputStream() throws IOException;
 
   /**
    * A key uniquely identifying an artifact between builds. Different versions of an artifact

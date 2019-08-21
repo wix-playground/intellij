@@ -19,22 +19,40 @@ import com.google.idea.blaze.base.sync.BlazeSyncIntegrationTestCase;
 
 /** Environment containing the common Blaze attributes shared across a target map. */
 public class BlazeInfoData {
-  /**
-   * The default value is taken from {@link BlazeSyncIntegrationTestCase} to keep target maps
-   * default consistent with existing blaze integration tests.
-   */
-  private static final String DEFAULT_EXEC_ROOT_REL_BIN_PATH =
-      "blaze-out/gcc-4.X.Y-crosstool-v17-hybrid-grtev3-k8-fastbuild/bin";
-
-  public static final BlazeInfoData DEFAULT = new BlazeInfoData(DEFAULT_EXEC_ROOT_REL_BIN_PATH);
+  public static final BlazeInfoData DEFAULT = builder().build();
   private String blazeExecutablesRootPath;
 
   public BlazeInfoData(String blazeExecutablesRootPath) {
     this.blazeExecutablesRootPath = blazeExecutablesRootPath;
   }
 
-  /** The default value to set in ArtifactLocation#rootExecutionPathFragment. */
-  public String getRootExecutionPathFragment() {
+  public String getBlazeExecutablesRootPath() {
     return blazeExecutablesRootPath;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Builder for BlazeInfoData. */
+  public static class Builder {
+    /**
+     * The default value is taken from {@link BlazeSyncIntegrationTestCase#BLAZE_BIN} to keep target
+     * maps default consistent with existing blaze integration tests.
+     */
+    public static String DEFAULT_BLAZE_EXECUTABLES_ROOT_PATH =
+        "/execroot/root/blaze-out/gcc-4.X.Y-crosstool-v17-hybrid-grtev3-k8-fastbuild/bin";
+
+    private String blazeExecutablesRootPath = DEFAULT_BLAZE_EXECUTABLES_ROOT_PATH;
+
+    /** For the default value {@see BlazeInfoData.Builder#DEFAULT_BLAZE_EXECUTABLES_ROOT_PATH} */
+    public Builder setBlazeExecutablesRootPath(String blazeExecutablesRootPath) {
+      this.blazeExecutablesRootPath = blazeExecutablesRootPath;
+      return this;
+    }
+
+    public BlazeInfoData build() {
+      return new BlazeInfoData(blazeExecutablesRootPath);
+    }
   }
 }

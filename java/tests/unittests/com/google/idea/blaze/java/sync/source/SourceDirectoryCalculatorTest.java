@@ -977,7 +977,7 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
   @Test
   public void testNewFormatManifest() {
     setNewFormatPackageManifest(
-        "/root/blaze-out/k8-opt/genfiles/java/com/test.manifest",
+        "/root/java/com/test.manifest",
         ImmutableList.of(
             Common.ArtifactLocation.newBuilder()
                 .setRelativePath("java/com/google/Bla.java")
@@ -989,7 +989,6 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
             TargetKey.forPlainTarget(LABEL),
             ArtifactLocation.builder()
                 .setRelativePath("java/com/test.manifest")
-                .setRootExecutionPathFragment("blaze-out/k8-opt/genfiles")
                 .setIsSource(false)
                 .build());
     Map<TargetKey, Map<ArtifactLocation, String>> manifestMap =
@@ -1007,7 +1006,7 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
   @Test
   public void testManifestSingleFile() {
     setPackageManifest(
-        "/root/blaze-out/k8-opt/genfiles/java/com/test.manifest",
+        "/root/java/com/test.manifest",
         ImmutableList.of("java/com/google/Bla.java"),
         ImmutableList.of("com.google"));
     ImmutableMap<TargetKey, ArtifactLocation> manifests =
@@ -1015,7 +1014,6 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
             TargetKey.forPlainTarget(LABEL),
             ArtifactLocation.builder()
                 .setRelativePath("java/com/test.manifest")
-                .setRootExecutionPathFragment("blaze-out/k8-opt/genfiles")
                 .setIsSource(false)
                 .build());
     Map<TargetKey, Map<ArtifactLocation, String>> manifestMap =
@@ -1033,11 +1031,11 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
   @Test
   public void testManifestRepeatedSources() {
     setPackageManifest(
-        "/root/blaze-out/k8-opt/genfiles/java/com/test.manifest",
+        "/root/java/com/test.manifest",
         ImmutableList.of("java/com/google/Bla.java", "java/com/google/Foo.java"),
         ImmutableList.of("com.google", "com.google.subpackage"));
     setPackageManifest(
-        "/root/blaze-out/k8-opt/genfiles/java/com/test2.manifest",
+        "/root/java/com/test2.manifest",
         ImmutableList.of("java/com/google/Bla.java", "java/com/google/other/Temp.java"),
         ImmutableList.of("com.google", "com.google.other"));
     ImmutableMap<TargetKey, ArtifactLocation> manifests =
@@ -1046,14 +1044,12 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
                 TargetKey.forPlainTarget(Label.create("//a:a")),
                 ArtifactLocation.builder()
                     .setRelativePath("java/com/test.manifest")
-                    .setRootExecutionPathFragment("blaze-out/k8-opt/genfiles")
                     .setIsSource(false)
                     .build())
             .put(
                 TargetKey.forPlainTarget(Label.create("//b:b")),
                 ArtifactLocation.builder()
                     .setRelativePath("java/com/test2.manifest")
-                    .setRootExecutionPathFragment("blaze-out/k8-opt/genfiles")
                     .setIsSource(false)
                     .build())
             .build();
@@ -1088,7 +1084,7 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
   @Test
   public void testManifestMissingSourcesFallback() {
     setPackageManifest(
-        "/root/blaze-out/k8-opt/genfiles/java/com/test.manifest",
+        "/root/java/com/test.manifest",
         ImmutableList.of("java/com/google/Bla.java", "java/com/google/Foo.java"),
         ImmutableList.of("com.google", "com.google"));
 
@@ -1101,7 +1097,6 @@ public class SourceDirectoryCalculatorTest extends BlazeTestCase {
             TargetKey.forPlainTarget(LABEL),
             ArtifactLocation.builder()
                 .setRelativePath("java/com/test.manifest")
-                .setRootExecutionPathFragment("blaze-out/k8-opt/genfiles")
                 .setIsSource(false)
                 .build());
 

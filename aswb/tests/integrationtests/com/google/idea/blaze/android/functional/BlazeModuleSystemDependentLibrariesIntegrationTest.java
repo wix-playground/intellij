@@ -34,6 +34,7 @@ import com.google.idea.blaze.android.libraries.UnpackedAars;
 import com.google.idea.blaze.android.projectsystem.BlazeModuleSystem;
 import com.google.idea.blaze.android.projectsystem.MavenArtifactLocator;
 import com.google.idea.blaze.android.sync.model.BlazeResourceLibrary;
+import com.google.idea.blaze.android.targetmapbuilder.BlazeInfoData;
 import com.google.idea.blaze.android.targetmapbuilder.NbAarTarget;
 import com.google.idea.blaze.base.ideinfo.ArtifactLocation;
 import com.google.idea.blaze.base.model.LibraryKey;
@@ -120,8 +121,10 @@ public class BlazeModuleSystemDependentLibrariesIntegrationTest
 
     mockSdk("android-27", "Android 27 SDK");
 
+    BlazeInfoData info =
+        BlazeInfoData.builder().setBlazeExecutablesRootPath("bazel-out/crosstool/bin").build();
     NbAarTarget aarTarget =
-        aar_import(aarFile)
+        aar_import(aarFile, info)
             .aar("lib_aar.aar")
             .generated_jar("_aar/an_aar/classes_and_libs_merged.jar");
     AarLibraryFileBuilder.aar(workspaceRoot, aarTarget.getAar().getRelativePath())
