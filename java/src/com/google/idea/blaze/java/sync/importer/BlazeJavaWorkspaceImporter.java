@@ -15,7 +15,6 @@
  */
 package com.google.idea.blaze.java.sync.importer;
 
-
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -284,12 +283,6 @@ public final class BlazeJavaWorkspaceImporter {
     if (javaIdeInfo.getFilteredGenJar() != null) {
       workspaceBuilder.generatedJarsFromSourceTargets.add(
           new BlazeJarLibrary(javaIdeInfo.getFilteredGenJar()));
-    }
-    if (JavaSourceFilter.isJavaProtoTarget(target)) {
-      // add generated jars from all proto library targets in the project
-      javaIdeInfo.getJars().stream()
-          .map(BlazeJarLibrary::new)
-          .forEach(workspaceBuilder.generatedJarsFromSourceTargets::add);
     }
 
     for (BlazeJavaSyncAugmenter augmenter : augmenters) {
