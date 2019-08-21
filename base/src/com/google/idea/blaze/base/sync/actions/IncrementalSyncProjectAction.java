@@ -64,9 +64,9 @@ public class IncrementalSyncProjectAction extends BlazeProjectAction {
   private static Icon getIcon(BlazeSyncStatus.SyncStatus status) {
     switch (status) {
       case FAILED:
-        return BlazeIcons.Failed;
+        return BlazeIcons.BlazeFailed;
       default:
-        return BlazeIcons.Logo;
+        return BlazeIcons.Blaze;
     }
   }
 

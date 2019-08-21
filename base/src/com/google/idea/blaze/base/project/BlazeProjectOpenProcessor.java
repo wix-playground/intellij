@@ -37,7 +37,7 @@ public class BlazeProjectOpenProcessor extends ProjectOpenProcessor {
   @Nullable
   @Override
   public Icon getIcon() {
-    return BlazeIcons.Logo;
+    return BlazeIcons.Blaze;
   }
 
   private static final String DEPRECATED_PROJECT_DATA_SUBDIRECTORY = ".project";

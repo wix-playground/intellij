@@ -29,7 +29,7 @@ public class BlazeIconsTest {
 
   @Test
   public void testIcon() {
-    Icon icon = BlazeIcons.Logo;
+    Icon icon = BlazeIcons.Blaze;
 
     assertNotNull(icon);
   }
