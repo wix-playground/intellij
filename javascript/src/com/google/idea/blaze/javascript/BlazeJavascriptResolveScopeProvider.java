@@ -15,6 +15,7 @@
  */
 package com.google.idea.blaze.javascript;
 
+import com.google.common.collect.ImmutableList;
 import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.sync.libraries.ExternalLibraryManager;
 import com.google.idea.blaze.typescript.BlazeTypeScriptAdditionalLibraryRootsProvider;
@@ -30,6 +31,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.ResolveScopeManager;
 import com.intellij.psi.search.DelegatingGlobalSearchScope;
 import com.intellij.psi.search.GlobalSearchScope;
+import java.util.List;
 import javax.annotation.Nullable;
 
 /**
@@ -45,11 +47,12 @@ class BlazeJavascriptResolveScopeProvider implements JSElementResolveScopeProvid
       return null;
     }
     ExternalLibraryManager manager = ExternalLibraryManager.getInstance(project);
-    SyntheticLibrary library =
-        element.getLanguage() instanceof TypeScriptLanguageDialect
-            ? manager.getLibrary(BlazeTypeScriptAdditionalLibraryRootsProvider.class)
-            : manager.getLibrary(BlazeJavascriptAdditionalLibraryRootsProvider.class);
-    if (library == null) {
+    List<SyntheticLibrary> libraries =
+        ImmutableList.copyOf(
+            element.getLanguage() instanceof TypeScriptLanguageDialect
+                ? manager.getLibrary(BlazeTypeScriptAdditionalLibraryRootsProvider.class)
+                : manager.getLibrary(BlazeJavascriptAdditionalLibraryRootsProvider.class));
+    if (libraries.isEmpty()) {
       return null;
     }
     GlobalSearchScope baseScope = getBaseScope(element);
@@ -59,7 +62,8 @@ class BlazeJavascriptResolveScopeProvider implements JSElementResolveScopeProvid
     return new DelegatingGlobalSearchScope(baseScope) {
       @Override
       public boolean contains(VirtualFile file) {
-        return super.contains(file) || library.contains(file);
+        return super.contains(file)
+            || libraries.stream().anyMatch(library -> library.contains(file));
       }
     };
   }

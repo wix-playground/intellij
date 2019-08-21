@@ -304,7 +304,6 @@ intellij_unit_test_suite(
         "//intellij_platform_sdk:plugin_api_for_tests",
         "//intellij_platform_sdk:test_libs",
         "//proto:proto_deps",
-        "//sdkcompat",
         "@junit//jar",
     ],
 )

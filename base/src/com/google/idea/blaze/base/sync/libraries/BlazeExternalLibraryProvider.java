@@ -19,23 +19,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.AdditionalLibraryRootsProvider;
-import com.intellij.openapi.roots.SyntheticLibrary;
 import java.io.File;
-import java.util.Collection;
 
 /**
  * {@link AdditionalLibraryRootsProvider} that needs to be handled by {@link
  * ExternalLibraryManager}.
+ *
+ * <p>Requires update to library files after sync and periodically on frame activation.
  */
-public abstract class BlazeExternalLibraryProvider extends AdditionalLibraryRootsProvider {
-  protected abstract String getLibraryName();
+public interface BlazeExternalLibraryProvider {
+  String getLibraryName();
 
-  protected abstract ImmutableList<File> getLibraryFiles(
-      Project project, BlazeProjectData projectData);
-
-  @Override
-  public final Collection<SyntheticLibrary> getAdditionalProjectLibraries(Project project) {
-    SyntheticLibrary library = ExternalLibraryManager.getInstance(project).getLibrary(getClass());
-    return library != null ? ImmutableList.of(library) : ImmutableList.of();
-  }
+  ImmutableList<File> getLibraryFiles(Project project, BlazeProjectData projectData);
 }

@@ -23,24 +23,34 @@ import com.google.idea.blaze.base.model.primitives.LanguageClass;
 import com.google.idea.blaze.base.model.primitives.WorkspacePath;
 import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.sync.libraries.BlazeExternalLibraryProvider;
+import com.google.idea.blaze.base.sync.libraries.ExternalLibraryManager;
 import com.google.idea.blaze.base.sync.projectview.ImportRoots;
 import com.google.idea.blaze.golang.resolve.BlazeGoPackage;
 import com.google.idea.common.experiments.BoolExperiment;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.AdditionalLibraryRootsProvider;
+import com.intellij.openapi.roots.SyntheticLibrary;
 import java.io.File;
+import java.util.Collection;
 import java.util.function.Predicate;
 
-final class BlazeGoAdditionalLibraryRootsProvider extends BlazeExternalLibraryProvider {
+class BlazeGoAdditionalLibraryRootsProvider extends AdditionalLibraryRootsProvider
+    implements BlazeExternalLibraryProvider {
   private static final BoolExperiment useGoAdditionalLibraryRootsProvider =
       new BoolExperiment("use.go.additional.library.roots.provider4", true);
 
   @Override
-  protected String getLibraryName() {
+  public Collection<SyntheticLibrary> getAdditionalProjectLibraries(Project project) {
+    return ExternalLibraryManager.getInstance(project).getLibrary(getClass());
+  }
+
+  @Override
+  public String getLibraryName() {
     return "Go Libraries";
   }
 
   @Override
-  protected ImmutableList<File> getLibraryFiles(Project project, BlazeProjectData projectData) {
+  public ImmutableList<File> getLibraryFiles(Project project, BlazeProjectData projectData) {
     if (!useGoAdditionalLibraryRootsProvider.getValue()) {
       return ImmutableList.of();
     }
