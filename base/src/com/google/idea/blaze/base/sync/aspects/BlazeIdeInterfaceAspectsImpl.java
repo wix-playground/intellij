@@ -392,6 +392,7 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
 
               BlazeIdeInterfaceState.Builder state = BlazeIdeInterfaceState.builder();
               state.ideInfoFileState = ImmutableMap.copyOf(nextFileState);
+              state.workspaceLanguageSettings = languageSettings;
 
               Map<TargetKey, TargetIdeInfo> targetMap = Maps.newHashMap();
               if (prevState != null && !targetMapReference.isNull()) {
