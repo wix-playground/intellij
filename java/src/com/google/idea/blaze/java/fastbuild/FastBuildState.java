@@ -17,7 +17,6 @@ package com.google.idea.blaze.java.fastbuild;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.idea.blaze.base.command.info.BlazeInfo;
 import com.google.idea.blaze.base.model.primitives.Label;
 import java.io.File;
 import java.util.Map;
@@ -38,11 +37,8 @@ abstract class FastBuildState {
 
     abstract Map<Label, FastBuildBlazeData> blazeData();
 
-    abstract BlazeInfo blazeInfo();
-
-    static BuildOutput create(
-        File deployJar, Map<Label, FastBuildBlazeData> blazeData, BlazeInfo blazeInfo) {
-      return new AutoValue_FastBuildState_BuildOutput(deployJar, blazeData, blazeInfo);
+    static BuildOutput create(File deployJar, Map<Label, FastBuildBlazeData> blazeData) {
+      return new AutoValue_FastBuildState_BuildOutput(deployJar, blazeData);
     }
   }
 

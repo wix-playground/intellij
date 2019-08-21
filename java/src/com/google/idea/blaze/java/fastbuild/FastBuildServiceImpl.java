@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.idea.blaze.base.async.FutureUtil;
 import com.google.idea.blaze.base.async.executor.ProgressiveTaskWithProgressIndicator;
 import com.google.idea.blaze.base.async.process.ExternalTask;
 import com.google.idea.blaze.base.async.process.LineProcessingOutputStream;
@@ -38,8 +37,6 @@ import com.google.idea.blaze.base.command.buildresult.BlazeArtifact;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper.GetArtifactsException;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelperProvider;
-import com.google.idea.blaze.base.command.info.BlazeInfo;
-import com.google.idea.blaze.base.command.info.BlazeInfoRunner;
 import com.google.idea.blaze.base.console.BlazeConsoleLineProcessorProvider;
 import com.google.idea.blaze.base.model.primitives.Kind;
 import com.google.idea.blaze.base.model.primitives.Label;
@@ -51,11 +48,10 @@ import com.google.idea.blaze.base.run.ExecutorType;
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.ScopedTask;
 import com.google.idea.blaze.base.scope.output.StatusOutput;
-import com.google.idea.blaze.base.scope.scopes.TimingScope.EventType;
-import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BuildSystem;
 import com.google.idea.blaze.base.sync.aspects.BuildResult;
 import com.google.idea.blaze.base.sync.aspects.BuildResult.Status;
+import com.google.idea.blaze.base.sync.data.BlazeProjectDataManager;
 import com.google.idea.blaze.java.AndroidBlazeRules;
 import com.google.idea.blaze.java.JavaBlazeRules;
 import com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService.ChangedSources;
@@ -91,6 +87,7 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
 
   private final Project project;
   private final ProjectViewManager projectViewManager;
+  private final BlazeProjectDataManager projectDataManager;
   private final FastBuildIncrementalCompiler incrementalCompiler;
   private final FastBuildChangedFilesService changedFilesManager;
   private final Thread shutdownHook;
@@ -100,10 +97,12 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
   FastBuildServiceImpl(
       Project project,
       ProjectViewManager projectViewManager,
+      BlazeProjectDataManager projectDataManager,
       FastBuildIncrementalCompiler incrementalCompiler,
       FastBuildChangedFilesService changedFilesManager) {
     this.project = project;
     this.projectViewManager = projectViewManager;
+    this.projectDataManager = projectDataManager;
     this.incrementalCompiler = incrementalCompiler;
     this.changedFilesManager = changedFilesManager;
     this.builds = new ConcurrentHashMap<>();
@@ -142,8 +141,7 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
                   label,
                   buildOutput.deployJar(),
                   ImmutableList.of(buildState.compilerOutputDirectory(), buildOutput.deployJar()),
-                  buildOutput.blazeData(),
-                  buildOutput.blazeInfo()),
+                  buildOutput.blazeData()),
           directExecutor());
     } catch (FastBuildTunnelException e) {
       throw e.asFastBuildException();
@@ -154,24 +152,22 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
       String blazeBinaryPath, List<String> userBlazeFlags) {
 
     ProjectViewSet projectViewSet = projectViewManager.getProjectViewSet();
-    BlazeInvocationContext context =
-        BlazeInvocationContext.runConfigContext(
-            ExecutorType.FAST_BUILD_RUN, BlazeCommandRunConfigurationType.getInstance(), true);
-    List<String> buildFlags =
-        BlazeFlags.blazeFlags(project, projectViewSet, BlazeCommandName.BUILD, context);
-    List<String> infoFlags =
-        BlazeFlags.blazeFlags(project, projectViewSet, BlazeCommandName.INFO, context);
-
+    List<String> projectBlazeFlags =
+        BlazeFlags.blazeFlags(
+            project,
+            projectViewSet,
+            BlazeCommandName.BUILD,
+            BlazeInvocationContext.runConfigContext(
+                ExecutorType.FAST_BUILD_RUN, BlazeCommandRunConfigurationType.getInstance(), true));
     return FastBuildParameters.builder()
         .setBlazeBinary(blazeBinaryPath)
         // TODO(b/64714884): reenable this once one version enforcement is turned on for java_tests
         // Right now there's a discrepancy because enforcement is disabled for java_test rules, but
         // turns back on if you build a java_test_deploy.jar (as we do). So force it off for the
         // deploy jar too.
-        .addBuildFlags(ImmutableList.of("--experimental_one_version_enforcement=off"))
-        .addBuildFlags(buildFlags)
-        .addBuildFlags(userBlazeFlags)
-        .addInfoFlags(infoFlags)
+        .addBlazeFlags(ImmutableList.of("--experimental_one_version_enforcement=off"))
+        .addBlazeFlags(projectBlazeFlags)
+        .addBlazeFlags(userBlazeFlags)
         .build();
   }
 
@@ -198,7 +194,7 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
     if (changedSources.needsFullCompile()) {
       File compileDirectory = getCompilerOutputDirectory(existingBuildState);
       ListenableFuture<BuildOutput> newBuildOutput =
-          buildDeployJarAsync(context, label, buildParameters);
+          buildDeployJar(context, label, buildParameters);
       changedFilesManager.newBuild(label, newBuildOutput);
       return FastBuildState.create(newBuildOutput, compileDirectory, buildParameters);
     } else {
@@ -244,115 +240,98 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
     return buildOutput != null && buildOutput.deployJar().exists() ? buildOutput : null;
   }
 
-  private ListenableFuture<FastBuildState.BuildOutput> buildDeployJarAsync(
+  private ListenableFuture<FastBuildState.BuildOutput> buildDeployJar(
       BlazeContext context, Label label, FastBuildParameters buildParameters) {
+
+    Label deployJarLabel = createDeployJarLabel(label);
+    WorkspaceRoot workspaceRoot = WorkspaceRoot.fromProject(project);
+
+    FastBuildAspectStrategy aspectStrategy =
+        FastBuildAspectStrategy.getInstance(
+            projectDataManager.getBlazeProjectData().getBlazeVersionData().buildSystem());
     @SuppressWarnings("MustBeClosedChecker") // close buildResultHelper manually via a listener
     BuildResultHelper buildResultHelper = BuildResultHelperProvider.create(project);
 
-    ListenableFuture<FastBuildState.BuildOutput> resultFuture =
+    Stopwatch timer = Stopwatch.createUnstarted();
+
+    ListenableFuture<BuildResult> buildResultFuture =
         ProgressiveTaskWithProgressIndicator.builder(project, "Building deploy jar for fast builds")
             .submitTaskWithResult(
-                new ScopedTask<FastBuildState.BuildOutput>(context) {
+                new ScopedTask<BuildResult>(context) {
                   @Override
-                  protected FastBuildState.BuildOutput execute(BlazeContext context) {
-                    return buildDeployJar(context, label, buildParameters, buildResultHelper);
+                  protected BuildResult execute(BlazeContext context) {
+                    context.output(
+                        new StatusOutput(
+                            "Building base deploy jar for fast builds: "
+                                + deployJarLabel.targetName()));
+
+                    BlazeCommand.Builder command =
+                        BlazeCommand.builder(buildParameters.blazeBinary(), BlazeCommandName.BUILD)
+                            .addTargets(label)
+                            .addTargets(deployJarLabel)
+                            .addBlazeFlags(buildParameters.blazeFlags())
+                            .addBlazeFlags(buildResultHelper.getBuildFlags());
+
+                    aspectStrategy.addAspectAndOutputGroups(
+                        command, /* additionalOutputGroups= */ "default");
+
+                    timer.start();
+                    int exitCode =
+                        ExternalTask.builder(workspaceRoot)
+                            .addBlazeCommand(command.build())
+                            .context(context)
+                            .stderr(
+                                LineProcessingOutputStream.of(
+                                    BlazeConsoleLineProcessorProvider.getAllStderrLineProcessors(
+                                        context)))
+                            .build()
+                            .run();
+                    return BuildResult.fromExitCode(exitCode);
                   }
                 });
-    resultFuture.addListener(buildResultHelper::close, ConcurrencyUtil.getAppExecutorService());
-    return resultFuture;
-  }
 
-  private FastBuildState.BuildOutput buildDeployJar(
-      BlazeContext context,
-      Label label,
-      FastBuildParameters buildParameters,
-      BuildResultHelper resultHelper) {
-    Label deployJarLabel = createDeployJarLabel(label);
-    context.output(
-        new StatusOutput(
-            "Building base deploy jar for fast builds: " + deployJarLabel.targetName()));
+    ListenableFuture<BuildOutput> buildOutputFuture =
+        Futures.transform(
+            buildResultFuture,
+            result -> {
+              context.output(
+                  FastBuildLogOutput.keyValue("deploy_jar_build_result", result.status.toString()));
+              context.output(FastBuildLogOutput.milliseconds("deploy_jar_build_time_ms", timer));
+              if (result.status != Status.SUCCESS) {
+                throw new RuntimeException("Blaze failure building deploy jar");
+              }
+              Predicate<String> filePredicate =
+                  file ->
+                      file.endsWith(deployJarLabel.targetName().toString())
+                          || aspectStrategy.getAspectOutputFilePredicate().test(file);
+              try {
+                ImmutableList<File> deployJarArtifacts =
+                    BlazeArtifact.getLocalFiles(
+                        buildResultHelper.getBuildArtifactsForTarget(
+                            deployJarLabel, filePredicate));
+                checkState(deployJarArtifacts.size() == 1);
+                File deployJar = deployJarArtifacts.get(0);
 
-    BlazeInfo blazeInfo = getBlazeInfo(context, buildParameters);
-    FastBuildAspectStrategy aspectStrategy =
-        FastBuildAspectStrategy.getInstance(Blaze.getBuildSystem(project));
+                ImmutableList<File> ideInfoFiles =
+                    BlazeArtifact.getLocalFiles(
+                        buildResultHelper.getArtifactsForOutputGroup(
+                            aspectStrategy.getAspectOutputGroup(), filePredicate));
 
-    Stopwatch timer = Stopwatch.createStarted();
-
-    BlazeCommand.Builder command =
-        BlazeCommand.builder(buildParameters.blazeBinary(), BlazeCommandName.BUILD)
-            .addTargets(label)
-            .addTargets(deployJarLabel)
-            .addBlazeFlags(buildParameters.buildFlags())
-            .addBlazeFlags(resultHelper.getBuildFlags());
-
-    aspectStrategy.addAspectAndOutputGroups(command, /* additionalOutputGroups= */ "default");
-
-    int exitCode =
-        ExternalTask.builder(WorkspaceRoot.fromProject(project))
-            .addBlazeCommand(command.build())
-            .context(context)
-            .stderr(
-                LineProcessingOutputStream.of(
-                    BlazeConsoleLineProcessorProvider.getAllStderrLineProcessors(context)))
-            .build()
-            .run();
-    BuildResult result = BuildResult.fromExitCode(exitCode);
-    context.output(
-        FastBuildLogOutput.keyValue("deploy_jar_build_result", result.status.toString()));
-    context.output(FastBuildLogOutput.milliseconds("deploy_jar_build_time_ms", timer));
-    if (result.status != Status.SUCCESS) {
-      throw new RuntimeException("Blaze failure building deploy jar");
-    }
-    Predicate<String> filePredicate =
-        file ->
-            file.endsWith(deployJarLabel.targetName().toString())
-                || aspectStrategy.getAspectOutputFilePredicate().test(file);
-    try {
-      ImmutableList<File> deployJarArtifacts =
-          BlazeArtifact.getLocalFiles(
-              resultHelper.getBuildArtifactsForTarget(deployJarLabel, filePredicate));
-      checkState(deployJarArtifacts.size() == 1);
-      File deployJar = deployJarArtifacts.get(0);
-
-      ImmutableList<File> ideInfoFiles =
-          BlazeArtifact.getLocalFiles(
-              resultHelper.getArtifactsForOutputGroup(
-                  aspectStrategy.getAspectOutputGroup(), filePredicate));
-
-      // if targets are built with multiple configurations, just take the first one
-      // TODO(brendandouglas): choose a consistent configuration instead
-      ImmutableMap<Label, FastBuildBlazeData> blazeData =
-          ideInfoFiles.stream()
-              .map(aspectStrategy::readFastBuildBlazeData)
-              .collect(toImmutableMap(FastBuildBlazeData::label, i -> i, (i, j) -> i));
-      return BuildOutput.create(deployJar, blazeData, blazeInfo);
-    } catch (GetArtifactsException e) {
-      throw new RuntimeException("Blaze failure building deploy jar: " + e.getMessage());
-    }
-  }
-
-  private BlazeInfo getBlazeInfo(BlazeContext context, FastBuildParameters buildParameters) {
-    BuildSystem buildSystem = Blaze.getBuildSystem(project);
-    ListenableFuture<BlazeInfo> blazeInfoFuture =
-        BlazeInfoRunner.getInstance()
-            .runBlazeInfo(
-                context,
-                buildSystem,
-                buildParameters.blazeBinary(),
-                WorkspaceRoot.fromProject(project),
-                buildParameters.infoFlags());
-    BlazeInfo info =
-        FutureUtil.waitForFuture(context, blazeInfoFuture)
-            .timed(buildSystem.getName() + "Info", EventType.BlazeInvocation)
-            .withProgressMessage(
-                String.format("Running %s info...", buildSystem.getLowerCaseName()))
-            .onError(String.format("Could not run %s info", buildSystem.getLowerCaseName()))
-            .run()
-            .result();
-    if (info == null) {
-      throw new RuntimeException(String.format("%s info failed", buildSystem.getLowerCaseName()));
-    }
-    return info;
+                // if targets are built with multiple configurations, just take the first one
+                // TODO(brendandouglas): choose a consistent configuration instead
+                ImmutableMap<Label, FastBuildBlazeData> blazeData =
+                    ideInfoFiles.stream()
+                        .map(aspectStrategy::readFastBuildBlazeData)
+                        .collect(toImmutableMap(FastBuildBlazeData::label, i -> i, (i, j) -> i));
+                return BuildOutput.create(deployJar, blazeData);
+              } catch (GetArtifactsException e) {
+                throw new RuntimeException("Blaze failure building deploy jar: " + e.getMessage());
+              }
+            },
+            ConcurrencyUtil.getAppExecutorService());
+    buildOutputFuture.addListener(
+        buildResultHelper::close, ConcurrencyUtil.getAppExecutorService());
+    return buildOutputFuture;
   }
 
   private Label createDeployJarLabel(Label label) {

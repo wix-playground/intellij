@@ -29,9 +29,7 @@ abstract class FastBuildParameters {
 
   abstract String blazeBinary();
 
-  abstract ImmutableList<String> buildFlags();
-
-  abstract ImmutableList<String> infoFlags();
+  abstract ImmutableList<String> blazeFlags();
 
   static Builder builder() {
     return new AutoValue_FastBuildParameters.Builder();
@@ -41,17 +39,10 @@ abstract class FastBuildParameters {
   abstract static class Builder {
     abstract Builder setBlazeBinary(String blazeBinary);
 
-    abstract ImmutableList.Builder<String> buildFlagsBuilder();
+    abstract ImmutableList.Builder<String> blazeFlagsBuilder();
 
-    Builder addBuildFlags(List<String> buildFlags) {
-      buildFlagsBuilder().addAll(buildFlags);
-      return this;
-    }
-
-    abstract ImmutableList.Builder<String> infoFlagsBuilder();
-
-    Builder addInfoFlags(List<String> infoFlags) {
-      infoFlagsBuilder().addAll(infoFlags);
+    Builder addBlazeFlags(List<String> blazeFlags) {
+      blazeFlagsBuilder().addAll(blazeFlags);
       return this;
     }
 
