@@ -87,7 +87,7 @@ public class LocalFileOutputArtifact implements OutputArtifact, LocalFileArtifac
     if (!(obj instanceof LocalFileOutputArtifact)) {
       return false;
     }
-    return file.getPath().equals(((LocalFileOutputArtifact) obj).file.getPath());
+    return FileUtil.filesEqual(file, ((LocalFileOutputArtifact) obj).file);
   }
 
   @Override
