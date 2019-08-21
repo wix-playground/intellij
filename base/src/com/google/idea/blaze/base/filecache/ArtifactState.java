@@ -15,10 +15,12 @@
  */
 package com.google.idea.blaze.base.filecache;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.devtools.intellij.model.ProjectData;
 import com.google.devtools.intellij.model.ProjectData.LocalFile;
 import com.google.devtools.intellij.model.ProjectData.LocalFileOrOutputArtifact;
 import com.google.idea.blaze.base.command.buildresult.OutputArtifact;
+import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -38,6 +40,12 @@ public interface ArtifactState {
   boolean isMoreRecent(ArtifactState output);
 
   LocalFileOrOutputArtifact serializeToProto();
+
+  static ImmutableMap<String, ArtifactState> convertOldFormat(Map<String, Long> fileState) {
+    ImmutableMap.Builder<String, ArtifactState> map = ImmutableMap.builder();
+    fileState.forEach((k, v) -> map.put(k, new LocalFileState(k, v)));
+    return map.build();
+  }
 
   @Nullable
   static ArtifactState fromProto(LocalFileOrOutputArtifact proto) {
