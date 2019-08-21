@@ -18,6 +18,7 @@ package com.google.idea.blaze.typescript;
 import com.google.common.base.Ascii;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -364,7 +365,6 @@ class BlazeTypeScriptConfig implements TypeScriptConfigCompat {
       File blazeBin = new File(workspaceRoot, BlazeInfo.blazeBinKey(buildSystem));
       File blazeGenfiles = new File(workspaceRoot, BlazeInfo.blazeGenfilesKey(buildSystem));
 
-      // modules are resolved in this order
       alternativePrefixes.add(baseUrlPath.relativize(workspaceRoot.toPath()).toString());
       alternativePrefixes.add(baseUrlPath.relativize(blazeBin.toPath()).toString());
       alternativePrefixes.add(baseUrlPath.relativize(blazeGenfiles.toPath()).toString());
@@ -694,7 +694,7 @@ class BlazeTypeScriptConfig implements TypeScriptConfigCompat {
 
   static class PathSubstitution implements JSModulePathSubstitution {
     private final String pattern;
-    private final ImmutableList<String> mappings;
+    private final ImmutableSet<String> mappings;
 
     PathSubstitution(
         String pattern,
@@ -702,17 +702,17 @@ class BlazeTypeScriptConfig implements TypeScriptConfigCompat {
         List<String> alternativePrefixes,
         @Nullable String runfilesPrefix) {
       this.pattern = pattern;
-      List<String> candidates = new ArrayList<>();
+      ImmutableSet.Builder<String> builder = ImmutableSet.builder();
       for (String mapping : mappings) {
-        if (runfilesPrefix != null && mapping.startsWith(runfilesPrefix)) {
-          for (String alternativeRoot : alternativePrefixes) {
-            candidates.add(alternativeRoot + mapping.substring(runfilesPrefix.length()));
-          }
+        builder.add(mapping);
+        if (runfilesPrefix == null || !mapping.startsWith(runfilesPrefix)) {
+          continue;
+        }
+        for (String alternativeRoot : alternativePrefixes) {
+          builder.add(alternativeRoot + mapping.substring(runfilesPrefix.length()));
         }
       }
-      // fall back to the runfiles if no other path resolves
-      candidates.addAll(mappings);
-      this.mappings = candidates.stream().distinct().collect(ImmutableList.toImmutableList());
+      this.mappings = builder.build();
     }
 
     @Override
