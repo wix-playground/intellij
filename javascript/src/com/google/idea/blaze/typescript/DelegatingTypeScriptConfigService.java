@@ -67,9 +67,10 @@ class DelegatingTypeScriptConfigService implements TypeScriptConfigServiceCompat
     }
   }
 
-  boolean update() {
-    return impl instanceof BlazeTypeScriptConfigServiceImpl
-        && ((BlazeTypeScriptConfigServiceImpl) impl).update();
+  void update() {
+    if (impl instanceof BlazeTypeScriptConfigServiceImpl) {
+      ((BlazeTypeScriptConfigServiceImpl) impl).update();
+    }
   }
 
   @Override
