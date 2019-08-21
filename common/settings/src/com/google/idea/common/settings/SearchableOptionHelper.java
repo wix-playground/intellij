@@ -21,30 +21,31 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 /** A helper class to make settings text searchable. */
-public final class SearchableTextHelper {
+public final class SearchableOptionHelper {
 
   private final SearchableOptionsRegistrar registrar;
   private final String configurableId;
   private final String displayName;
 
-  public SearchableTextHelper(SearchableConfigurable configurable) {
+  public SearchableOptionHelper(SearchableConfigurable configurable) {
     this(configurable.getId(), configurable.getDisplayName());
   }
 
-  public SearchableTextHelper(String configurableId, String displayName) {
+  public SearchableOptionHelper(String configurableId, String displayName) {
     this.registrar = SearchableOptionsRegistrar.getInstance();
     this.configurableId = configurableId;
     this.displayName = displayName;
   }
 
   /**
-   * Registers the given text, making it searchable for all words in its {@link
-   * SearchableText#label()} and {@link SearchableText#tags()}.
+   * Registers the given option, making it searchable for all words in its {@link
+   * SearchableOption#label()} and {@link SearchableOption#tags()}.
    */
-  public void registerText(SearchableText text) {
+  public void registerOption(SearchableOption option) {
     registerWords(
-        registrar.getProcessedWordsWithoutStemming(text.label()), /* searchResult= */ text.label());
-    registerWords(text.tags(), /* searchResult= */ text.label());
+        registrar.getProcessedWordsWithoutStemming(option.label()),
+        /* searchResult= */ option.label());
+    registerWords(option.tags(), /* searchResult= */ option.label());
   }
 
   private void registerWords(Set<String> words, @Nullable String searchResult) {

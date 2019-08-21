@@ -19,8 +19,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.idea.blaze.base.settings.Blaze;
-import com.google.idea.common.settings.SearchableText;
-import com.google.idea.common.settings.SearchableTextHelper;
+import com.google.idea.common.settings.SearchableOption;
+import com.google.idea.common.settings.SearchableOptionHelper;
 import com.intellij.ide.ui.search.SearchableOptionContributor;
 import com.intellij.ide.ui.search.SearchableOptionProcessor;
 import com.intellij.openapi.extensions.ExtensionPointName;
@@ -44,7 +44,7 @@ public class BlazeUserSettingsCompositeConfigurable
 
     UnnamedConfigurable getConfigurable();
 
-    ImmutableCollection<SearchableText> getSearchableText();
+    ImmutableCollection<SearchableOption> getSearchableOptions();
   }
 
   public static final String ID = "blaze.view";
@@ -82,10 +82,10 @@ public class BlazeUserSettingsCompositeConfigurable
   static class BlazeUserSettingsSearchableOptionContributor extends SearchableOptionContributor {
     @Override
     public void processOptions(SearchableOptionProcessor processor) {
-      SearchableTextHelper helper = new SearchableTextHelper(ID, DISPLAY_NAME);
+      SearchableOptionHelper helper = new SearchableOptionHelper(ID, DISPLAY_NAME);
       Arrays.stream(UiContributor.EP_NAME.getExtensions())
-          .flatMap(uiContributor -> uiContributor.getSearchableText().stream())
-          .forEach(helper::registerText);
+          .flatMap(uiContributor -> uiContributor.getSearchableOptions().stream())
+          .forEach(helper::registerOption);
     }
   }
 }

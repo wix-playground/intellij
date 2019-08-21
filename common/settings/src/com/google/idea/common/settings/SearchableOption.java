@@ -20,32 +20,32 @@ import com.google.auto.value.AutoValue.CopyAnnotations;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.Immutable;
 
-/** Text which can be searched for in the Settings dialog and 'Help → Find Action'. */
+/** An option which can be searched for in the Settings dialog and 'Help → Find Action'. */
 @AutoValue
 @CopyAnnotations
 @Immutable
-public abstract class SearchableText {
+public abstract class SearchableOption {
 
   /**
-   * Returns the label to use in a {@link com.intellij.openapi.options.Configurable} UI and 'Help →
-   * Find Action'/'Search Everywhere' results.
+   * Returns the label to use for this option in a {@link com.intellij.openapi.options.Configurable}
+   * UI and 'Help → Find Action'/'Search Everywhere' results.
    */
   public abstract String label();
 
-  /** Returns additional search terms for this text. */
+  /** Returns additional search terms for this option. */
   abstract ImmutableSet<String> tags();
 
-  /** Creates {@link SearchableText} for the given UI label. */
-  public static SearchableText forLabel(String label) {
-    return SearchableText.withLabel(label).build();
+  /** Creates an option with the given UI label. */
+  public static SearchableOption forLabel(String label) {
+    return SearchableOption.withLabel(label).build();
   }
 
-  /** Returns a builder for {@link SearchableText} with the given UI label. */
+  /** Returns a builder for an option with the given UI label. */
   public static Builder withLabel(String label) {
-    return new AutoValue_SearchableText.Builder().setLabel(label);
+    return new AutoValue_SearchableOption.Builder().setLabel(label);
   }
 
-  /** A builder for {@link SearchableText}. */
+  /** A builder for {@link SearchableOption SearchableOptions}. */
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -54,7 +54,7 @@ public abstract class SearchableText {
     abstract ImmutableSet.Builder<String> tagsBuilder();
 
     /**
-     * Adds search terms, allowing this text to be a result for the given strings, even if they
+     * Adds search terms, allowing this option to be a result for the given strings, even if they
      * don't appear in the user-visible {@link #label()}.
      */
     public final Builder addTags(String... tags) {
@@ -64,6 +64,6 @@ public abstract class SearchableText {
       return this;
     }
 
-    public abstract SearchableText build();
+    public abstract SearchableOption build();
   }
 }
