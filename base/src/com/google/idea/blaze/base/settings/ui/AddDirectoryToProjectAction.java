@@ -23,16 +23,17 @@ import com.google.idea.blaze.base.actions.BlazeProjectAction;
 import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.google.idea.blaze.base.model.primitives.TargetExpression;
 import com.google.idea.blaze.base.model.primitives.WorkspacePath;
+import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.projectview.ProjectViewEdit;
 import com.google.idea.blaze.base.projectview.ProjectViewManager;
 import com.google.idea.blaze.base.projectview.ProjectViewSet;
 import com.google.idea.blaze.base.projectview.section.ListSection;
 import com.google.idea.blaze.base.projectview.section.ListSection.Builder;
-import com.google.idea.blaze.base.projectview.section.sections.AutomaticallyDeriveTargetsSection;
 import com.google.idea.blaze.base.projectview.section.sections.DirectoryEntry;
 import com.google.idea.blaze.base.projectview.section.sections.DirectorySection;
 import com.google.idea.blaze.base.projectview.section.sections.TargetSection;
-import com.google.idea.blaze.base.settings.Blaze;
+import com.google.idea.blaze.base.settings.BlazeImportSettings;
+import com.google.idea.blaze.base.settings.BlazeImportSettingsManager;
 import com.google.idea.blaze.base.settings.BuildSystem;
 import com.google.idea.blaze.base.sync.BlazeSyncManager;
 import com.google.idea.blaze.base.sync.data.BlazeProjectDataManager;
@@ -91,15 +92,8 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
     if (projectData == null) {
       return;
     }
-    ProjectViewSet projectView = ProjectViewManager.getInstance(project).getProjectViewSet();
-    if (projectView == null) {
-      return;
-    }
-    // TODO(brendandouglas): if there are no options (fixed directory, auto-derived targets), skip
-    // the dialog entirely
     OpenBlazeWorkspaceFileActionDialog dialog =
-        new OpenBlazeWorkspaceFileActionDialog(
-            project, projectView, projectData.getWorkspacePathResolver());
+        new OpenBlazeWorkspaceFileActionDialog(project, projectData.getWorkspacePathResolver());
     if (fixedDirectory != null) {
       dialog.fileTextField.getField().setText(fixedDirectory.getAbsolutePath());
       dialog.fileTextField.getField().setEnabled(false);
@@ -111,17 +105,15 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
 
     static final int PATH_FIELD_WIDTH = 40;
     final Project project;
-    final ProjectViewSet projectView;
     final WorkspacePathResolver workspacePathResolver;
     final JPanel component;
     final FileTextField fileTextField;
     final JBCheckBox addTargetsCheckBox;
 
     OpenBlazeWorkspaceFileActionDialog(
-        Project project, ProjectViewSet projectView, WorkspacePathResolver workspacePathResolver) {
+        Project project, WorkspacePathResolver workspacePathResolver) {
       super(project, /* canBeParent= */ false, IdeModalityType.PROJECT);
       this.project = project;
-      this.projectView = projectView;
       this.workspacePathResolver = workspacePathResolver;
 
       FileChooserDescriptor descriptor =
@@ -134,9 +126,7 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
       JPanel directoryPanel =
           SwingHelper.newHorizontalPanel(
               Component.TOP_ALIGNMENT, directoryLabel, fileTextField.getField());
-
-      boolean autoDeriveTargets = autoDeriveTargets();
-      addTargetsCheckBox = new JBCheckBox("Add build targets to the project", !autoDeriveTargets);
+      addTargetsCheckBox = new JBCheckBox("Add build targets to the project", true);
       JBLabel warning =
           new JBLabel(
               "<html>" + ADD_TARGETS_WARNING_TEXT + "</html>",
@@ -147,17 +137,13 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
       addTargetsCheckBox.addChangeListener(
           e -> {
             String warningText;
-            if (autoDeriveTargets || addTargetsCheckBox.isSelected()) {
+            if (addTargetsCheckBox.isSelected()) {
               warningText = ADD_TARGETS_WARNING_TEXT;
             } else {
               warningText = NO_TARGETS_WARNING_TEXT;
             }
             warning.setText("<html>" + warningText + "</html>");
           });
-
-      if (autoDeriveTargets) {
-        addTargetsCheckBox.setVisible(false);
-      }
 
       component =
           SwingHelper.newLeftAlignedVerticalPanel(
@@ -166,10 +152,6 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
       setTitle("Add Directory to Project");
 
       init();
-    }
-
-    private boolean autoDeriveTargets() {
-      return projectView.getScalarValue(AutomaticallyDeriveTargetsSection.KEY).orElse(false);
     }
 
     @Nullable
@@ -200,7 +182,13 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
         return new ValidationInfo("File is not in workspace", fileTextField.getField());
       }
 
-      if (Blaze.getBuildSystem(project) == BuildSystem.Blaze && workspacePath.isWorkspaceRoot()) {
+      ProjectViewSet projectViewSet = ProjectViewManager.getInstance(project).getProjectViewSet();
+      checkState(projectViewSet != null);
+
+      BlazeImportSettings importSettings =
+          BlazeImportSettingsManager.getInstance(project).getImportSettings();
+      checkState(importSettings != null);
+      if (importSettings.getBuildSystem() == BuildSystem.Blaze && workspacePath.isWorkspaceRoot()) {
         return new ValidationInfo(
             String.format(
                 "Cannot add the workspace root '%s' to the project.\n"
@@ -208,7 +196,12 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
                 selectedFile.getPath()));
       }
 
-      ImportRoots importRoots = ImportRoots.builder(project).add(projectView).build();
+      ImportRoots importRoots =
+          ImportRoots.builder(
+                  WorkspaceRoot.fromImportSettings(importSettings), importSettings.getBuildSystem())
+              .add(projectViewSet)
+              .build();
+
       if (importRoots.containsWorkspacePath(workspacePath)) {
         return new ValidationInfo("This directory is already included in your project");
       }
@@ -224,7 +217,13 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
           workspacePathResolver.getWorkspacePath(new File(selectedFile.getPath()));
       checkState(workspacePath != null);
 
-      ImportRoots existingRoots = ImportRoots.builder(project).add(projectView).build();
+      ProjectViewSet projectViewSet = ProjectViewManager.getInstance(project).getProjectViewSet();
+      checkState(projectViewSet != null);
+
+      Set<DirectoryEntry> existingDirectories =
+          ImmutableSet.copyOf(projectViewSet.listItems(DirectorySection.KEY));
+      Set<TargetExpression> existingTargets =
+          ImmutableSet.copyOf(projectViewSet.listItems(TargetSection.KEY));
 
       Set<WorkspacePath> pathsToAdd = new LinkedHashSet<>();
       pathsToAdd.add(workspacePath);
@@ -233,18 +232,18 @@ public final class AddDirectoryToProjectAction extends BlazeProjectAction {
               .findRelatedWorkspaceDirectories(workspacePathResolver, workspacePath));
 
       Set<DirectoryEntry> newDirectories =
-          pathsToAdd.stream()
-              .filter(path -> !existingRoots.containsWorkspacePath(path))
+          pathsToAdd
+              .stream()
               .map(DirectoryEntry::include)
+              .filter(entry -> !existingDirectories.contains(entry))
               .collect(toCollection(LinkedHashSet::new));
 
       Set<TargetExpression> newTargets =
-          autoDeriveTargets()
-              ? ImmutableSet.of()
-              : pathsToAdd.stream()
-                  .filter(path -> !existingRoots.containsWorkspacePath(path))
-                  .map(TargetExpression::allFromPackageRecursive)
-                  .collect(toCollection(LinkedHashSet::new));
+          pathsToAdd
+              .stream()
+              .map(TargetExpression::allFromPackageRecursive)
+              .filter(entry -> !existingTargets.contains(entry))
+              .collect(toCollection(LinkedHashSet::new));
 
       boolean addTargets = addTargetsCheckBox.isSelected();
 

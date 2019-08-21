@@ -68,18 +68,10 @@ class AddSourceToProjectAction extends BlazeProjectAction {
     if (context == null) {
       return;
     }
-    boolean addDirectories = !AddSourceToProjectHelper.sourceInProjectDirectories(context);
-    boolean addTargets =
-        !AddSourceToProjectHelper.sourceCoveredByProjectViewTargets(context)
-            && !AddSourceToProjectHelper.autoDeriveTargets(project);
-    if (!addDirectories && !addTargets) {
-      // nothing to do
-      return;
-    }
-
+    boolean inProjectDirectories = AddSourceToProjectHelper.sourceInProjectDirectories(context);
     PsiFileSystemItem psiFile = findFileOrDirectory(PsiManager.getInstance(project), vf);
     if (psiFile instanceof PsiDirectory) {
-      if (addDirectories) {
+      if (!inProjectDirectories) {
         AddDirectoryToProjectAction.runAction(project, new File(vf.getPath()));
       } else {
         Messages.showErrorDialog(
@@ -89,13 +81,6 @@ class AddSourceToProjectAction extends BlazeProjectAction {
       }
       return;
     }
-
-    if (!addTargets) {
-      AddSourceToProjectHelper.addSourceAndTargetsToProject(
-          project, context.workspacePath, ImmutableList.of());
-      return;
-    }
-
     if (psiFile instanceof BuildFile
         && ((BuildFile) psiFile).getBlazeFileType() == BlazeFileType.BuildPackage) {
       AddSourceToProjectHelper.addSourceAndTargetsToProject(
@@ -104,7 +89,11 @@ class AddSourceToProjectAction extends BlazeProjectAction {
           ImmutableList.of(TargetExpression.allFromPackageNonRecursive(context.blazePackage)));
       return;
     }
-
+    if (inProjectDirectories
+        && (AddSourceToProjectHelper.sourceCoveredByProjectViewTargets(context)
+            || !SyncStatusContributor.isUnsynced(project, context.file))) {
+      return;
+    }
     // otherwise find the targets building this source file, then add them to the project
     ListenableFuture<List<TargetInfo>> targetsFuture =
         AddSourceToProjectHelper.getTargetsBuildingSource(context);
@@ -114,7 +103,7 @@ class AddSourceToProjectAction extends BlazeProjectAction {
     targetsFuture.addListener(
         () -> {
           List<TargetInfo> targets = FuturesUtil.getIgnoringErrors(targetsFuture);
-          if (!addDirectories && (targets == null || targets.isEmpty())) {
+          if (inProjectDirectories && (targets == null || targets.isEmpty())) {
             Messages.showWarningDialog(
                 project,
                 "Add source to project action failed",
@@ -123,7 +112,7 @@ class AddSourceToProjectAction extends BlazeProjectAction {
         },
         MoreExecutors.directExecutor());
     AddSourceToProjectHelper.addSourceToProject(
-        project, context.workspacePath, !addDirectories, targetsFuture);
+        project, context.workspacePath, inProjectDirectories, targetsFuture);
     // update editor notifications, to handle the case where the file is currently open.
     EditorNotifications.getInstance(project).updateNotifications(vf);
   }
@@ -141,19 +130,11 @@ class AddSourceToProjectAction extends BlazeProjectAction {
     if (context == null) {
       return null;
     }
-    boolean addDirectories = !AddSourceToProjectHelper.sourceInProjectDirectories(context);
-    boolean addTargets =
-        !AddSourceToProjectHelper.sourceCoveredByProjectViewTargets(context)
-            && !AddSourceToProjectHelper.autoDeriveTargets(project);
-    if (!addDirectories && !addTargets) {
-      // nothing to do
-      return null;
-    }
+    boolean inProjectDirectories = AddSourceToProjectHelper.sourceInProjectDirectories(context);
     PsiFileSystemItem psiFile = findFileOrDirectory(PsiManager.getInstance(project), vf);
     if (psiFile instanceof PsiDirectory) {
-      return addDirectories ? "Add directory to project" : null;
+      return !inProjectDirectories ? "Add directory to project" : null;
     }
-
     if (psiFile instanceof BuildFile
         && ((BuildFile) psiFile).getBlazeFileType() == BlazeFileType.BuildPackage) {
       return AddSourceToProjectHelper.packageCoveredByProjectTargets(context)
@@ -164,7 +145,7 @@ class AddSourceToProjectAction extends BlazeProjectAction {
       return null;
     }
 
-    if (!addDirectories
+    if (inProjectDirectories
         && (AddSourceToProjectHelper.sourceCoveredByProjectViewTargets(context)
             || !SyncStatusContributor.isUnsynced(project, context.file))) {
       return null;
