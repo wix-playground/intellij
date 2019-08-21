@@ -155,7 +155,6 @@ public class BlazeIdeInterfaceAspectsImpl implements BlazeIdeInterface {
     if (state == null) {
       return null;
     }
-    context.output(PrintOutput.log("Target map size: " + state.targetMap.targets().size()));
 
     RemoteOutputArtifacts oldRemoteOutputs = RemoteOutputArtifacts.fromProjectData(oldProjectData);
     // combine outputs map, then filter to remove out-of-date / unnecessary items

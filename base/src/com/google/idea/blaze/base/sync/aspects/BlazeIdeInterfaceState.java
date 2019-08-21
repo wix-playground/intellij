@@ -20,15 +20,12 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.devtools.intellij.model.ProjectData;
 import com.google.devtools.intellij.model.ProjectData.LocalFileOrOutputArtifact;
 import com.google.idea.blaze.base.filecache.ArtifactState;
 import com.google.idea.blaze.base.ideinfo.ProtoWrapper;
 import com.google.idea.blaze.base.ideinfo.TargetKey;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 /** Sync state for aspect output files, and their mapping to targets. */
 public final class BlazeIdeInterfaceState
@@ -43,9 +40,9 @@ public final class BlazeIdeInterfaceState
   final ImmutableBiMap<String, TargetKey> ideInfoFileToTargetKey;
 
   private BlazeIdeInterfaceState(
-      Map<String, ArtifactState> ideInfoFileState,
+      ImmutableMap<String, ArtifactState> ideInfoFileState,
       BiMap<String, TargetKey> ideInfoFileToTargetKey) {
-    this.ideInfoFileState = ImmutableMap.copyOf(ideInfoFileState);
+    this.ideInfoFileState = ideInfoFileState;
     this.ideInfoFileToTargetKey = ImmutableBiMap.copyOf(ideInfoFileToTargetKey);
   }
 
@@ -75,13 +72,6 @@ public final class BlazeIdeInterfaceState
       proto.addIdeInfoFiles(ideInfoFileState.get(key).serializeToProto());
     }
     return proto.build();
-  }
-
-  public BlazeIdeInterfaceState filter(Predicate<TargetKey> targetsToKeep) {
-    BiMap<String, TargetKey> filteredBiMap =
-        Maps.filterValues(ideInfoFileToTargetKey, targetsToKeep::test);
-    return new BlazeIdeInterfaceState(
-        Maps.filterKeys(ideInfoFileState, filteredBiMap::containsKey), filteredBiMap);
   }
 
   @Override
