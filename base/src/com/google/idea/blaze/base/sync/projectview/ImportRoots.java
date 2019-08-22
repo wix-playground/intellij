@@ -31,20 +31,27 @@ import com.google.idea.blaze.base.projectview.section.sections.DirectoryEntry;
 import com.google.idea.blaze.base.projectview.section.sections.DirectorySection;
 import com.google.idea.blaze.base.projectview.section.sections.TargetSection;
 import com.google.idea.blaze.base.settings.Blaze;
+import com.google.idea.blaze.base.settings.BlazeUserSettings;
 import com.google.idea.blaze.base.settings.BuildSystem;
 import com.google.idea.blaze.base.sync.data.BlazeDataStorage;
 import com.google.idea.blaze.base.util.WorkspacePathUtil;
 import com.google.idea.common.experiments.BoolExperiment;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+
+import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /** The roots to import. Derived from project view. */
 public final class ImportRoots {
-
+  private static final Logger logger = Logger.getInstance(ImportRoots.class);
   private final BoolExperiment treatProjectTargetsAsSource =
       new BoolExperiment("blaze.treat.project.targets.as.source", true);
 
@@ -77,13 +84,46 @@ public final class ImportRoots {
     }
 
     public Builder add(ProjectViewSet projectViewSet) {
-      for (DirectoryEntry entry : projectViewSet.listItems(DirectorySection.KEY)) {
+      List<DirectoryEntry> directoryEntries = projectViewSet.listItems(DirectorySection.KEY);
+
+      addRootExclusionsIfNeeded(directoryEntries);
+
+      for (DirectoryEntry entry : directoryEntries) {
         add(entry);
       }
       projectTargets.addAll(projectViewSet.listItems(TargetSection.KEY));
       deriveTargetsFromDirectories =
           projectViewSet.getScalarValue(AutomaticallyDeriveTargetsSection.KEY).orElse(false);
       return this;
+    }
+
+    private void addRootExclusionsIfNeeded(List<DirectoryEntry> directoryEntries) {
+      if (BlazeUserSettings.getInstance().getShowRootFiles()) {
+        try {
+          List<WorkspacePath> rootSubFolders = Files
+              .list(workspaceRoot.directory().toPath())
+              .filter(path -> path.toFile().isDirectory())
+              .map(path -> workspaceRoot.workspacePathFor(path.toFile()))
+              .collect(Collectors.toList());
+
+          if (directoryEntries.size() > 1 &&
+              directoryEntries.contains(DirectoryEntry.include(new WorkspacePath("")))) {
+            removeNotListed(directoryEntries, rootSubFolders);
+          }
+        } catch (IOException e) {
+          logger.error(e);
+        }
+      }
+    }
+
+    private void removeNotListed(List<DirectoryEntry> directoryEntries, List<WorkspacePath> rootSubFolders) {
+      rootSubFolders.stream()
+          .filter(path -> notListedDirectory(directoryEntries, path))
+          .forEach(path -> directoryEntries.add(DirectoryEntry.exclude(path)));
+    }
+
+    private boolean notListedDirectory(List<DirectoryEntry> directoryEntries, WorkspacePath path) {
+      return directoryEntries.stream().noneMatch(entry -> entry.directory.equals(path));
     }
 
     @VisibleForTesting
