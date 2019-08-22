@@ -30,6 +30,7 @@ import com.google.idea.blaze.base.projectview.section.sections.DirectorySection;
 import com.google.idea.blaze.base.scope.BlazeContext;
 import com.google.idea.blaze.base.scope.ErrorCollector;
 import com.google.idea.blaze.base.scope.output.IssueOutput;
+import com.google.idea.blaze.base.settings.BlazeUserSettings;
 import com.google.idea.blaze.base.settings.BuildSystem;
 import com.google.idea.blaze.base.sync.BlazeSyncPlugin;
 import com.google.idea.blaze.base.sync.projectview.ImportRoots;
@@ -79,6 +80,7 @@ public class ProjectViewVerifierTest extends BlazeTestCase {
 
     fileOperationProvider = new MockFileOperationProvider(workspaceRoot);
     applicationServices.register(FileOperationProvider.class, fileOperationProvider);
+    applicationServices.register(BlazeUserSettings.class, new BlazeUserSettings());
     context = new BlazeContext();
     context.addOutputSink(IssueOutput.class, errorCollector);
   }
