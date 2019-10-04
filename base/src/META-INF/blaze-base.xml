@@ -285,6 +285,10 @@
     <lang.documentationProvider language="projectview" implementationClass="com.google.idea.blaze.base.lang.projectview.documentation.ProjectViewDocumentationProvider"/>
     <langCodeStyleSettingsProvider implementation="com.google.idea.blaze.base.lang.projectview.formatting.ProjectViewCodeStyleSettingsProvider"/>
     <lang.rearranger language="projectview" implementationClass="com.google.idea.blaze.base.lang.projectview.formatting.ProjectViewRearranger"/>
+    <testSourcesFilter implementation="com.google.idea.blaze.base.search.BazelTestSourcesFilter"/>
+    <applicationService serviceInterface="com.intellij.psi.search.PredefinedSearchScopeProvider"
+                        serviceImplementation="com.google.idea.blaze.base.search.BazelOptionalTestScopeSearchProvider"
+                        overrides="true"/>
   </extensions>
 
   <extensions defaultExtensionNs="com.intellij">
