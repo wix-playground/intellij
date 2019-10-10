@@ -259,6 +259,7 @@ class GenerateDeployableJarTaskProvider
                                 context,
                                 invocationContext))
                         .addBlazeFlags(buildResultHelper.getBuildFlags())
+                        .addBlazeFlags("--remote_upload_local_results=false")
                         .build();
                 int exitCode =
                     ExternalTask.builder(workspaceRoot)
