@@ -34,9 +34,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Integration tests for {@link DeployableJarRunConfigurationProducer}. */
+/** Integration tests for {@link GenerateDeployableJarTaskProvider}. */
 @RunWith(JUnit4.class)
-public class DeployableJarRunConfigurationProducerTest
+public class GenerateDeployableJarTaskProviderTest
     extends BlazeRunConfigurationProducerTestCase {
 
   @Override
@@ -45,7 +45,7 @@ public class DeployableJarRunConfigurationProducerTest
   }
 
   @Test
-  public void testCorrectMainAppAndTargetChosen() {
+  public void testCorrectMainAppAndTargetAndBeforeLaunchStepChosen() {
     MockBlazeProjectDataBuilder builder = MockBlazeProjectDataBuilder.builder(workspaceRoot);
     builder.setTargetMap(
         TargetMapBuilder.builder()
@@ -57,8 +57,10 @@ public class DeployableJarRunConfigurationProducerTest
                     .setJavaInfo(JavaIdeInfo.builder())
                     .build())
             .build());
+
     registerProjectService(
         BlazeProjectDataManager.class, new MockBlazeProjectDataManager(builder.build()));
+
 
     PsiFile scalaFile =
         createAndIndexFile(
@@ -72,14 +74,36 @@ public class DeployableJarRunConfigurationProducerTest
             "package java.lang { public final class String {} }");
 
     RunConfiguration config = createConfigurationFromLocation(scalaFile);
+    ApplicationConfiguration appConfig = assertApplicationConfiguration(config);
 
+    assertMainClassIs("com.google.library.Foo", appConfig);
+    assertTargetLabelIs("//com/google/library:SomeLibrary", appConfig);
+    assertBeforeLaunchSingleStepIs("GenerateDeployableJarTarget", appConfig);
+  }
+
+  private ApplicationConfiguration assertApplicationConfiguration(RunConfiguration config) {
     assertThat(config).isInstanceOf(ApplicationConfiguration.class);
     ApplicationConfiguration appConfig = (ApplicationConfiguration) config;
     assertThat(appConfig).isNotNull();
-    assertThat(appConfig.getMainClass().getQualifiedName()).isEqualTo("com.google.library.Foo");
+    return appConfig;
+  }
+
+  private void assertMainClassIs(String mainClassName, ApplicationConfiguration appConfig) {
+    assertThat(appConfig.getMainClass()).isNotNull();
+    assertThat(appConfig.getMainClass().getQualifiedName()).isEqualTo(mainClassName);
+  }
+
+  private void assertTargetLabelIs(String targetLabel, ApplicationConfiguration appConfig) {
     assertThat(appConfig.getUserData(DeployableJarRunConfigurationProducer.TARGET_LABEL))
         .isNotNull();
+
     assertThat(appConfig.getUserData(DeployableJarRunConfigurationProducer.TARGET_LABEL))
-        .isEqualTo(TargetExpression.fromStringSafe("//com/google/library:SomeLibrary"));
+        .isEqualTo(TargetExpression.fromStringSafe(targetLabel));
+  }
+
+  private void assertBeforeLaunchSingleStepIs(String stepName, ApplicationConfiguration appConfig) {
+    assertThat(appConfig.getBeforeRunTasks()).isNotNull();
+    assertThat(appConfig.getBeforeRunTasks().size()).isEqualTo(1);
+    assertThat(appConfig.getBeforeRunTasks().get(0).getProviderId().toString()).isEqualTo(stepName);
   }
 }
