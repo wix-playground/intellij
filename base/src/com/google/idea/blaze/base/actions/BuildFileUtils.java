@@ -80,11 +80,8 @@ final class BuildFileUtils {
     final Stream<Label> targetLabels = SourceToTargetMap.getInstance(project)
         .getTargetsToBuildForSourceFile(file).stream();
 
-    final Stream<Label> maybeFilteredLabels = filterCRelatedLabelsWhichBelongToOtherPackages(file,
-        packagePath, targetLabels);
-
     Label label =
-        maybeFilteredLabels
+        filterCRelatedLabelsWhichBelongToOtherPackages(file,packagePath, targetLabels)
             .filter(l -> l.blazePackage().equals(packagePath))
             .findFirst()
             .orElse(null);
