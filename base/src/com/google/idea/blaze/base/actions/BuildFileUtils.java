@@ -25,11 +25,13 @@ import com.google.idea.blaze.base.lang.buildfile.references.BuildReferenceManage
 import com.google.idea.blaze.base.lang.buildfile.search.BlazePackage;
 import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.google.idea.blaze.base.model.primitives.Label;
+import com.google.idea.blaze.base.model.primitives.LanguageClass;
 import com.google.idea.blaze.base.model.primitives.WorkspacePath;
 import com.google.idea.blaze.base.sync.data.BlazeProjectDataManager;
 import com.google.idea.blaze.base.targetmaps.SourceToTargetMap;
 import com.google.idea.common.experiments.BoolExperiment;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFileSystemItem;
@@ -37,6 +39,7 @@ import com.intellij.psi.PsiManager;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 /** BUILD-file utility methods used by actions. */
@@ -74,8 +77,16 @@ final class BuildFileUtils {
     if (packagePath == null) {
       return null;
     }
+    final Stream<Label> targetLabels = SourceToTargetMap.getInstance(project)
+        .getTargetsToBuildForSourceFile(file).stream();
+
+    LanguageClass fileLanguage = LanguageClass.fromExtension(FileUtilRt.getExtension(file.getName()).toLowerCase());
+    final Stream<Label> maybeFilteredLabels = (fileLanguage == LanguageClass.C) ?
+            targetLabels.filter(l -> l.blazePackage().equals(packagePath)) :
+            targetLabels;
+
     Label label =
-        SourceToTargetMap.getInstance(project).getTargetsToBuildForSourceFile(file).stream()
+        maybeFilteredLabels
             .filter(l -> l.blazePackage().equals(packagePath))
             .findFirst()
             .orElse(null);
