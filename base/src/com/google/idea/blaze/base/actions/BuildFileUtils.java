@@ -80,10 +80,8 @@ final class BuildFileUtils {
     final Stream<Label> targetLabels = SourceToTargetMap.getInstance(project)
         .getTargetsToBuildForSourceFile(file).stream();
 
-    LanguageClass fileLanguage = LanguageClass.fromExtension(FileUtilRt.getExtension(file.getName()).toLowerCase());
-    final Stream<Label> maybeFilteredLabels = (fileLanguage == LanguageClass.C) ?
-            targetLabels.filter(l -> l.blazePackage().equals(packagePath)) :
-            targetLabels;
+    final Stream<Label> maybeFilteredLabels = filterCRelatedLabelsWhichBelongToOtherPackages(file,
+        packagePath, targetLabels);
 
     Label label =
         maybeFilteredLabels
@@ -107,6 +105,28 @@ final class BuildFileUtils {
     }
 
     return null;
+  }
+
+  private static Stream<Label> filterCRelatedLabelsWhichBelongToOtherPackages(File file,
+      WorkspacePath packagePath, Stream<Label> targetLabels) {
+    /*
+      More info:
+      https://bazelbuild.slack.com/archives/CM8JQCANN/p1566481600003600
+      Filter was deliberately added to fix an issue with C++ headers.
+      The original bug was that opening the BUILD file for foo/bar.h caused it to open baz/qux/BUILD
+      because there’s a cc_library target in baz/qux that includes foo/bar.h in its headers.
+      The source-to-target look up queries the index for the target during the last sync which compiled the source file.
+      In this case, it was the cc_library target in baz/qux.
+      So the fix was to ensure that the BUILD file is always for the parent package (foo/bar).
+
+      This is limited to C only since this logic messes up supporting aggregate targets
+      https://github.com/bazelbuild/intellij/issues/475
+     */
+    LanguageClass fileLanguage = LanguageClass.fromExtension(
+        FileUtilRt.getExtension(file.getName()).toLowerCase());
+    return (fileLanguage == LanguageClass.C) ?
+            targetLabels.filter(l -> l.blazePackage().equals(packagePath)) :
+            targetLabels;
   }
 
   /**
