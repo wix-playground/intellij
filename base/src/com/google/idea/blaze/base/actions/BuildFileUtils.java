@@ -82,7 +82,6 @@ final class BuildFileUtils {
 
     Label label =
         filterCRelatedLabelsWhichBelongToOtherPackages(file,packagePath, targetLabels)
-            .filter(l -> l.blazePackage().equals(packagePath))
             .findFirst()
             .orElse(null);
     if (label == null) {
