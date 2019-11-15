@@ -393,6 +393,7 @@ public class BlazeBuildTargetSharderTest extends BlazeTestCase {
         BlazeBuildParams.builder()
             .setBlazeBinaryPath("foo")
             .setBlazeBinaryType(buildBinaryType)
+            .setInfoOnly(false)
             .build(),
         ProjectViewSet.builder().add(projectView).build(),
         new WorkspacePathResolverImpl(workspaceRoot),
