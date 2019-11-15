@@ -327,7 +327,9 @@ final class BuildPhaseSyncTask {
               projectState.getBlazeInfo(),
               shardedTargets,
               projectState.getLanguageSettings(),
-              ImmutableSet.of(OutputGroup.RESOLVE, OutputGroup.INFO));
+              syncParams.blazeBuildParams().infoOnly() ?
+                  ImmutableSet.of(OutputGroup.INFO):
+                  ImmutableSet.of(OutputGroup.INFO, OutputGroup.RESOLVE));
         });
   }
 }
