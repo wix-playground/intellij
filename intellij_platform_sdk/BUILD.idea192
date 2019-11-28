@@ -30,6 +30,11 @@ java_import(
 )
 
 java_import(
+    name = "failureaccess",
+    jars = glob(["lib/failureaccess-*.jar"]),
+)
+
+java_import(
     name = "coverage",
     jars = glob(["plugins/coverage/lib/*.jar"]),
 )
