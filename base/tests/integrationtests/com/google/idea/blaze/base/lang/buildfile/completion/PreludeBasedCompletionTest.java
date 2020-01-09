@@ -20,7 +20,8 @@ public class PreludeBasedCompletionTest extends BuildFileIntegrationTestCase {
 
   @Before
   public void setup() {
-    buildDefs = createBuildFile(new WorkspacePath("java/com/google/build_defs.bzl"), "def function(name, deps)\n def test_function(arg)");
+    buildDefs = createBuildFile(new WorkspacePath("java/com/google/build_defs.bzl"),
+        "def function(name, deps)\n def test_function(arg)");
     createBuildFile(new WorkspacePath("java/com/google/build_rules.bzl"), "test_rule = rule()");
     workspace.createFile(new WorkspacePath("tools/build_rules/prelude_bazel"),
         "load(",

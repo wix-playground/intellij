@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final public class PreludeManagerImpl extends PreludeManager {
+
   private static final String PRELUDE_FILE_NAME = "prelude_bazel";
 
   private final Project project;
@@ -34,7 +35,8 @@ final public class PreludeManagerImpl extends PreludeManager {
   }
 
   @Override
-  public boolean searchSymbolsInScope(Processor<BuildElement> processor, @Nullable PsiElement stopAtElement) {
+  public boolean searchSymbolsInScope(Processor<BuildElement> processor,
+      @Nullable PsiElement stopAtElement) {
     if (!initialized.getAndSet(true)) {
       reloadPreludeFile();
       subscribeToFileUpdates();
@@ -54,25 +56,34 @@ final public class PreludeManagerImpl extends PreludeManager {
       public void after(@NotNull List<? extends VFileEvent> events) {
         boolean preludeUpdated = events.stream().anyMatch(f -> {
           VirtualFile updatedFile = f.getFile();
-          return f.isFromSave() || f.isFromRefresh() && updatedFile != null && updatedFile.getName().endsWith(PRELUDE_FILE_NAME);
+          boolean isPreludeFile =
+              updatedFile != null && updatedFile.getName().endsWith(PRELUDE_FILE_NAME);
+          return isPreludeFile && f.isFromSave() || f.isFromRefresh();
         });
 
-        if (preludeUpdated)
+        if (preludeUpdated) {
           reloadPreludeFile();
+        }
       }
     });
   }
 
   private void reloadPreludeFile() {
     WorkspaceRoot projectRoot = WorkspaceRoot.fromProjectSafe(project);
-    if (projectRoot != null) {
-      File preludeFileOnDisk = projectRoot.fileForPath(new WorkspacePath("tools/build_rules/" + PRELUDE_FILE_NAME));
-      if (preludeFileOnDisk != null) {
-        PsiFileSystemItem preludeFile = BuildReferenceManager.getInstance(project).resolveFile(preludeFileOnDisk);
-        if (preludeFile != null) {
-          this.preludeFile = new PreludeFile(ObjectUtils.tryCast(preludeFile, BuildFile.class));
-        }
-      }
+    if (projectRoot == null) {
+      return;
+    }
+
+    File preludeFileOnDisk = projectRoot
+        .fileForPath(new WorkspacePath("tools/build_rules/" + PRELUDE_FILE_NAME));
+    if (preludeFileOnDisk == null) {
+      return;
+    }
+
+    PsiFileSystemItem preludeFile = BuildReferenceManager.getInstance(project)
+        .resolveFile(preludeFileOnDisk);
+    if (preludeFile != null) {
+      this.preludeFile = new PreludeFile(ObjectUtils.tryCast(preludeFile, BuildFile.class));
     }
   }
 

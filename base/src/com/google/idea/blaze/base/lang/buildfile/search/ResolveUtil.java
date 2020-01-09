@@ -44,10 +44,13 @@ public class ResolveUtil {
     while (!(element instanceof PsiFileSystemItem)) {
       PsiElement parent = element.getParent();
       if (parent instanceof BuildFile) {
+        BuildFile parentBuildFile = (BuildFile) parent;
+        PsiElement stopAtElement = topLevelScope ? element : null;
+        PreludeManager preludeManager = PreludeManager.getInstance(originalElement.getProject());
         // if it is build file we should start looking from topmost level
-        if  (!(((BuildFile) parent).getBlazeFileType() == BuildFile.BlazeFileType.BuildPackage
-            && PreludeManager.getInstance(originalElement.getProject()).searchSymbolsInScope(processor, topLevelScope ? element : null))) {
-          if (!((BuildFile) parent).searchSymbolsInScope(processor, topLevelScope ? element : null)) {
+        if (!(parentBuildFile.getBlazeFileType() == BuildFile.BlazeFileType.BuildPackage
+            && preludeManager.searchSymbolsInScope(processor, stopAtElement))) {
+          if (!parentBuildFile.searchSymbolsInScope(processor, stopAtElement)) {
             return;
           }
         }

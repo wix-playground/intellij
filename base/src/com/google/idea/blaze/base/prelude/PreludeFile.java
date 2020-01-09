@@ -8,13 +8,15 @@ import com.intellij.util.Processor;
 import javax.annotation.Nullable;
 
 final public class PreludeFile {
+
   private final BuildFile delegate;
 
   PreludeFile(BuildFile delegate) {
     this.delegate = delegate;
   }
 
-  public boolean searchSymbolsInScope(Processor<BuildElement> processor, @Nullable PsiElement stopAtElement) {
+  public boolean searchSymbolsInScope(Processor<BuildElement> processor,
+      @Nullable PsiElement stopAtElement) {
     return delegate.searchSymbolsInScope(processor, stopAtElement);
   }
 

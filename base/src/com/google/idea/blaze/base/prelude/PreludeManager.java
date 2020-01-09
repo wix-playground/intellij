@@ -14,6 +14,7 @@ public abstract class PreludeManager {
     return ServiceManager.getService(project, PreludeManager.class);
   }
 
-  public abstract boolean searchSymbolsInScope(Processor<BuildElement> processor, @Nullable PsiElement stopAtElement);
+  public abstract boolean searchSymbolsInScope(Processor<BuildElement> processor,
+      @Nullable PsiElement stopAtElement);
 
 }
