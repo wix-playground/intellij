@@ -48,11 +48,12 @@ public class ResolveUtil {
         PsiElement stopAtElement = topLevelScope ? element : null;
         PreludeManager preludeManager = PreludeManager.getInstance(originalElement.getProject());
         // if it is build file we should start looking from topmost level
-        if (!(parentBuildFile.getBlazeFileType() == BuildFile.BlazeFileType.BuildPackage
-            && preludeManager.searchSymbolsInScope(processor, stopAtElement))) {
-          if (!parentBuildFile.searchSymbolsInScope(processor, stopAtElement)) {
-            return;
-          }
+        if (parentBuildFile.getBlazeFileType() == BuildFile.BlazeFileType.BuildPackage
+            && !preludeManager.searchSymbolsInScope(processor, stopAtElement)) {
+          return;
+        }
+        if (!parentBuildFile.searchSymbolsInScope(processor, stopAtElement)) {
+          return;
         }
       } else if (parent instanceof FunctionStatement) {
         topLevelScope = false;
