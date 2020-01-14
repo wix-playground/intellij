@@ -162,8 +162,7 @@ public interface BuildSystemProvider {
   default ImmutableList<FileNameMatcher> buildLanguageFileTypeMatchers() {
     ImmutableList.Builder<FileNameMatcher> list = ImmutableList.builder();
     possibleBuildFileNames().forEach(s -> list.add(new ExactFileNameMatcher(s)));
-    list.add(new ExtensionFileNameMatcher("bzl"), new ExactFileNameMatcher("WORKSPACE"),
-        new ExactFileNameMatcher("prelude_bazel"));
+    list.add(new ExtensionFileNameMatcher("bzl"), new ExactFileNameMatcher("WORKSPACE"));
     return list.build();
   }
 
