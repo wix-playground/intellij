@@ -173,6 +173,7 @@ public interface BuildSystemProvider {
     possibleBuildFileNames().forEach(s -> list.add(new ExactFileNameMatcher(s)));
     possibleWorkspaceFileNames().forEach(s -> list.add(new ExactFileNameMatcher(s)));
     possibleFileExtensions().forEach(s -> list.add(new ExtensionFileNameMatcher(s)));
+    list.add(new ExactFileNameMatcher("prelude_bazel"));
     return list.build();
   }
 
