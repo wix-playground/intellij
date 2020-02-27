@@ -20,11 +20,13 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.idea.blaze.base.async.executor.BlazeExecutor;
+import com.google.idea.blaze.base.async.process.ExternalTask;
 import com.google.idea.blaze.base.bazel.BuildSystem.BuildInvoker;
 import com.google.idea.blaze.base.command.BlazeCommand;
 import com.google.idea.blaze.base.command.BlazeCommandName;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper;
 import com.google.idea.blaze.base.scope.BlazeContext;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BuildSystemName;
 import com.intellij.openapi.project.Project;
 
@@ -40,6 +42,11 @@ class BlazeInfoRunnerImpl extends BlazeInfoRunner {
       BlazeContext context,
       List<String> blazeFlags,
       String key) {
+    String binaryPath = Blaze.getBuildSystemProvider(project).getBinaryPath(project);
+    boolean isExecutable = ExternalTask.builder().args("which", binaryPath).build().run() == 0;
+    if (!isExecutable) {
+      BazelBinaryNotFoundNotification.show(binaryPath);
+    }
     return BlazeExecutor.getInstance()
         .submit(
             () -> {
