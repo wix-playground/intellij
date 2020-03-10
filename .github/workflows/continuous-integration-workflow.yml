@@ -1,0 +1,28 @@
+name: Run all tests
+on: [push]
+jobs:
+  build:
+    name: test with ${{ matrix.ij_product }}
+    runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ij_product: ['intellij-2025.1', 'intellij-2025.2']
+        experimental: [false]
+    steps:
+      - uses: actions/checkout@v4
+      - name: bazel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bazel-repository-cache
+          key: ${{ github.ref }}
+          restore-keys: refs/heads/master
+      - name: bazel test
+        continue-on-error: ${{ matrix.experimental }}
+        run: >
+          bazel test //:ijwb_ce_tests
+          --repository_cache=~/.bazel-repository-cache
+          --define=ij_product=${{ matrix.ij_product }}
+          --keep_going
+          --test_output=errors
