@@ -1,4 +1,4 @@
-"""Version of the blaze plugin."""
+"""Version of the blaze plugin ."""
 
 # This version will be overwritten in our rapid builds to the actual version number. We set the
 # default version to 9999 so that a dev plugin built from Piper HEAD will override any production
