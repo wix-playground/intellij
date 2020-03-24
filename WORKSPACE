@@ -29,6 +29,7 @@ http_archive(
     name = "intellij_ce_2020_1",
     build_file = "@//intellij_platform_sdk:BUILD.idea201",
     sha256 = "396f0045a713f224015c082924fc5c71be0e029effa2fd7bd3fa65632a55a18c",
+    strip_prefix = "idea-IC-201.4515.24",
     url = "https://download.jetbrains.com/idea/ideaIC-201.4515.24.tar.gz",
 )
 
@@ -56,6 +57,7 @@ http_archive(
     name = "intellij_ue_2020_1",
     build_file = "@//intellij_platform_sdk:BUILD.ue201",
     sha256 = "0944d1b15e6d8d8c13e33ed0bb43773bf7a2cd2100a679c2a668d543a7931de8",
+    strip_prefix = "idea-IU-201.4515.24",
     url = "https://download-cf.jetbrains.com/idea/ideaIU-201.4515.24.tar.gz",
 )
 
