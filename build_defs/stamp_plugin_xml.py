@@ -188,12 +188,11 @@ def main():
     idea_version_element = dom.createElement("idea-version")
     new_elements.append(idea_version_element)
 
-    major_version = _parse_major_version(api_version)
     if args.stamp_since_build:
-      since_version = major_version + ".0"
-      idea_version_element.setAttribute("since-build", since_version)
+      idea_version_element.setAttribute("since-build",
+                                        idea_version_build_element)
     if args.stamp_until_build:
-      until_version = major_version + ".*"
+      until_version = _parse_major_version(api_version) + ".*"
       idea_version_element.setAttribute("until-build", until_version)
 
   if args.changelog_file:

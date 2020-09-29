@@ -36,17 +36,12 @@ public abstract class BlazeBuildParams {
         .setBlazeBinaryPath(provider.getSyncBinaryPath(project))
         .setBlazeBinaryType(binaryType)
         .setParallelizeBuilds(parallelizeRemoteSyncs.getValue() && binaryType.isRemote)
-        .setInfoOnly(false)
         .build();
   }
 
   public abstract String blazeBinaryPath();
 
   public abstract BuildBinaryType blazeBinaryType();
-
-  public abstract boolean infoOnly();
-
-  public abstract Builder toBuilder();
 
   /**
    * Whether batched build invocations are run in parallel, when possible (only when building
@@ -65,8 +60,6 @@ public abstract class BlazeBuildParams {
     public abstract Builder setBlazeBinaryPath(String value);
 
     public abstract Builder setBlazeBinaryType(BuildBinaryType value);
-
-    public abstract Builder setInfoOnly(boolean value);
 
     // not public; derived from BuildBinaryType
     abstract Builder setParallelizeBuilds(boolean parallelizeBuilds);

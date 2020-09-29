@@ -235,7 +235,6 @@ class GenerateDeployableJarTaskProvider
                             BlazeFlags.blazeFlags(
                                 project, projectViewSet, BlazeCommandName.BUILD, invocationContext))
                         .addBlazeFlags(buildResultHelper.getBuildFlags())
-                        .addBlazeFlags(BlazeFlags.DISABLE_REMOTE_UPLOAD_LOCAL_RESULTS)
                         .build();
                 int exitCode =
                     ExternalTask.builder(workspaceRoot)
