@@ -460,11 +460,12 @@ rules_kotlin_version = "v1.5.0-beta-3"
 rules_kotlin_sha = "58edd86f0f3c5b959c54e656b8e7eb0b0becabd412465c37a2078693c2571f7f"
 http_archive(
     name = "io_bazel_rules_kotlin",
+    sha256 = rules_kotlin_sha,
     urls = ["https://github.com/bazelbuild/rules_kotlin/releases/download/%s/rules_kotlin_release.tgz" % rules_kotlin_version],
     sha256 = rules_kotlin_sha,
 )
 
-load("@io_bazel_rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories", )
+load("@io_bazel_rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories")
 load("@io_bazel_rules_kotlin//kotlin:core.bzl", "kt_register_toolchains")
 kotlin_repositories()
 kt_register_toolchains()
@@ -487,3 +488,29 @@ jvm_maven_import_external(
     licenses = ["notice"],  # Apache 2.0
     server_urls = ["https://repo1.maven.org/maven2"],
 )
+
+bazel_version = "31082327bdb64b7bf52dd55ae18d29e920e61025"
+
+bazel_repo_sha256 = "e8e1ac4bcab303f8f99c9b14ad3afbd059b84c516b7e76f6d9b89b8d5175594f"
+
+http_archive(
+    name = "bazel",
+    sha256 = bazel_repo_sha256,
+    strip_prefix = "bazel-" + bazel_version,
+    url = "https://github.com/bazelbuild/bazel/archive/%s.zip" % bazel_version,
+)
+
+http_archive(
+    name = "io_buildbuddy_buildbuddy_toolchain",
+    sha256 = "9055a3e6f45773cd61931eba7b7cf35d6477ab6ad8fb2f18bf9815271fc682fe",
+    strip_prefix = "buildbuddy-toolchain-52aa5d2cc6c9ba7ee4063de35987be7d1b75f8e2",
+    urls = ["https://github.com/buildbuddy-io/buildbuddy-toolchain/archive/52aa5d2cc6c9ba7ee4063de35987be7d1b75f8e2.tar.gz"],
+)
+
+load("@io_buildbuddy_buildbuddy_toolchain//:deps.bzl", "buildbuddy_deps")
+
+buildbuddy_deps()
+
+load("@io_buildbuddy_buildbuddy_toolchain//:rules.bzl", "buildbuddy")
+
+buildbuddy(name = "buildbuddy_toolchain")
