@@ -37,5 +37,6 @@ jobs:
             ${{ github.ref }}
             refs/heads/master
       - name: run bazel
+        continue-on-error: ${{ matrix.experimental }}
         run: |
             bazel --bazelrc=.bazelrc.remote test --repository_cache=/github/home/.bazel_cache -k --define=ij_product=${{ matrix.ij_product }} --test_output=errors //:ijwb_tests 
