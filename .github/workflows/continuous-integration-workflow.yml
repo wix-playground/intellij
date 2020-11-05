@@ -15,9 +15,9 @@ jobs:
       matrix:
         ij_product: ['intellij-2020.1']
         experimental: [false]
-        include:
-          - ij_product: 'intellij-2020.2'
-            experimental: true
+#        include:
+#          - ij_product: 'intellij-2020.2'
+#            experimental: true
     container:
       image: l.gcr.io/google/bazel:3.5.0
     steps:
