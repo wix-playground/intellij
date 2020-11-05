@@ -9,11 +9,17 @@ jobs:
     name: test with ${{ matrix.ij_product }}
     # This job runs on Linux
     runs-on: ubuntu-18.04
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        ij_product: ['intellij-2020.1','intellij-2020.2']
-        
+        ij_product: ['intellij-2020.1']
+        experimental: [false]
+        include:
+          - ij_product: 'intellij-2020.2'
+            experimental: true
+          - ij_product: 'intellij-beta'
+            experimental: true
     container:
       image: l.gcr.io/google/bazel:3.5.0
     steps:
@@ -34,4 +40,4 @@ jobs:
             refs/heads/master
       - name: run bazel
         run: |
-            bazel --bazelrc=.bazelrc.remote test --repository_cache=/github/home/.bazel_cache -k --define=ij_product=${{ matrix.ij_product }} //:ijwb_tests 
+            bazel --bazelrc=.bazelrc.remote test --repository_cache=/github/home/.bazel_cache -k --define=ij_product=${{ matrix.ij_product }} --test_output=errors //:ijwb_tests 
