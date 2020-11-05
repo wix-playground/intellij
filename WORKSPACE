@@ -436,12 +436,16 @@ load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kotlin_repositories")
 kotlin_repositories()
 
 http_archive(
-    name = "io_buildbuddy_toolchain",
-    sha256 = "7569eb8a5c25aab9b5047d0a3a00fecc2508ae9e72db615560f9676049df3476",
-    strip_prefix = "toolchain-4b0d2482e099e4804c96fac34fcdf31771deb75a",
-    urls = ["https://github.com/buildbuddy-io/toolchain/archive/4b0d2482e099e4804c96fac34fcdf31771deb75a.tar.gz"],
+    name = "io_buildbuddy_buildbuddy_toolchain",
+    sha256 = "9055a3e6f45773cd61931eba7b7cf35d6477ab6ad8fb2f18bf9815271fc682fe",
+    strip_prefix = "buildbuddy-toolchain-52aa5d2cc6c9ba7ee4063de35987be7d1b75f8e2",
+    urls = ["https://github.com/buildbuddy-io/buildbuddy-toolchain/archive/52aa5d2cc6c9ba7ee4063de35987be7d1b75f8e2.tar.gz"],
 )
 
-load("@io_buildbuddy_toolchain//:rules.bzl", "register_buildbuddy_toolchain")
+load("@io_buildbuddy_buildbuddy_toolchain//:deps.bzl", "buildbuddy_deps")
 
-register_buildbuddy_toolchain(name = "buildbuddy_toolchain")
+buildbuddy_deps()
+
+load("@io_buildbuddy_buildbuddy_toolchain//:rules.bzl", "buildbuddy")
+
+buildbuddy(name = "buildbuddy_toolchain")
