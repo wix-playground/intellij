@@ -339,6 +339,15 @@ jvm_maven_import_external(
     server_urls = ["https://repo1.maven.org/maven2"],
 )
 
+bazel_version="3.5.0"
+bazel_repo_sha256 = "5884fb3cd4f424150d0536f3b05235c8052097e3052027c0e8d269008c11a275"
+http_archive(
+    name = "bazel",
+    sha256 = bazel_repo_sha256,
+    url = "https://github.com/bazelbuild/bazel/archive/%s.zip" % bazel_version,
+    strip_prefix = "bazel-" + bazel_version
+)
+
 http_archive(
     name = "bazel_skylib",
     sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
