@@ -31,7 +31,7 @@ jobs:
       - name: bazel cache
         uses: actions/cache@v2
         with:
-          path: /github/home/.bazel_cache_folders
+          path: /github/home/.bazel_caches
           key: ${{ github.ref }}
           restore-keys: |
             ${{ github.ref }}
