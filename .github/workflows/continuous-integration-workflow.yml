@@ -31,7 +31,7 @@ jobs:
       - name: bazel cache
         uses: actions/cache@v2
         with:
-          path: /github/home/.bazel_cache
+          path: /github/home/.bazel_cache_folders
           key: ${{ github.ref }}
           restore-keys: |
             ${{ github.ref }}
@@ -39,4 +39,6 @@ jobs:
       - name: run bazel
         continue-on-error: ${{ matrix.experimental }}
         run: |
-            bazel --bazelrc=.bazelrc.remote test --repository_cache=/github/home/.bazel_cache -k --define=ij_product=${{ matrix.ij_product }} --test_output=errors //:ijwb_tests 
+            mkdir -p /github/home/.bazel_caches/http
+            mkdir -p /github/home/.bazel_caches/disk
+            bazel --bazelrc=.bazelrc.remote test --repository_cache=/github/home/.bazel_caches/http --disk_cache=/github/home/.bazel_caches/disk -k --define=ij_product=${{ matrix.ij_product }} --test_output=errors //:ijwb_tests 
