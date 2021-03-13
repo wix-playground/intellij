@@ -19,7 +19,7 @@ jobs:
 #          - ij_product: 'intellij-2020.2'
 #            experimental: true
     container:
-      image: l.gcr.io/google/bazel:4.0.0
+      image: l.gcr.io/google/bazel:3.5.0
     steps:
       - name: install bazelisk
         run: |
