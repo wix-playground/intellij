@@ -1,6 +1,6 @@
 name: Run all tests
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   
@@ -8,7 +8,7 @@ jobs:
     # Job name is Greeting
     name: test with ${{ matrix.ij_product }}
     # This job runs on Linux
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
@@ -19,7 +19,7 @@ jobs:
 #          - ij_product: 'intellij-2020.2'
 #            experimental: true
     container:
-      image: l.gcr.io/google/bazel:3.5.0
+      image: l.gcr.io/google/bazel:4.0.0
     steps:
       - name: install bazelisk
         run: |
