@@ -243,58 +243,58 @@ public class MultipleJavaClassesTestContextProviderTest
         .isNull();
   }
 
-  @Test
-  public void testProducedFromTestFiles() throws Throwable {
-    MockBlazeProjectDataBuilder builder = MockBlazeProjectDataBuilder.builder(workspaceRoot);
-    builder.setTargetMap(
-        TargetMapBuilder.builder()
-            .addTarget(
-                TargetIdeInfo.builder()
-                    .setKind("java_test")
-                    .setLabel("//java/com/google/test:allTests")
-                    .addSource(sourceRoot("java/com/google/test/TestClass1.java"))
-                    .addSource(sourceRoot("java/com/google/test/TestClass2.java"))
-                    .build())
-            .build());
-    registerProjectService(
-        BlazeProjectDataManager.class, new MockBlazeProjectDataManager(builder.build()));
-
-    workspace.createPsiDirectory(new WorkspacePath("java/com/google/test"));
-    PsiFile testClass1 =
-        createAndIndexFile(
-            new WorkspacePath("java/com/google/test/TestClass1.java"),
-            "package com.google.test;",
-            "@org.junit.runner.RunWith(org.junit.runners.JUnit4.class)",
-            "public class TestClass1 {",
-            "  @org.junit.Test",
-            "  public void testMethod() {}",
-            "}");
-    PsiFile testClass2 =
-        createAndIndexFile(
-            new WorkspacePath("java/com/google/test/TestClass2.java"),
-            "package com.google.test;",
-            "@org.junit.runner.RunWith(org.junit.runners.JUnit4.class)",
-            "public class TestClass2 {",
-            "  @org.junit.Test",
-            "  public void testMethod() {}",
-            "}");
-
-    ConfigurationContext context =
-        createContextFromMultipleElements(new PsiElement[] {testClass1, testClass2});
-    ConfigurationFromContext fromContext =
-        new TestContextRunConfigurationProducer().createConfigurationFromContext(context);
-    assertThat(fromContext).isNotNull();
-    assertThat(fromContext.getConfiguration()).isInstanceOf(BlazeCommandRunConfiguration.class);
-
-    BlazeCommandRunConfiguration config =
-        (BlazeCommandRunConfiguration) fromContext.getConfiguration();
-    assertThat(config.getTargets())
-        .containsExactly(TargetExpression.fromStringSafe("//java/com/google/test:allTests"));
-    assertThat(getTestFilterContents(config))
-        .isEqualTo("--test_filter=\"com.google.test.TestClass1#|com.google.test.TestClass2#\"");
-    assertThat(config.getName()).isEqualTo("Blaze test TestClass1 and 1 others");
-    assertThat(getCommandType(config)).isEqualTo(BlazeCommandName.TEST);
-  }
+//  @Test
+//  public void testProducedFromTestFiles() throws Throwable {
+//    MockBlazeProjectDataBuilder builder = MockBlazeProjectDataBuilder.builder(workspaceRoot);
+//    builder.setTargetMap(
+//        TargetMapBuilder.builder()
+//            .addTarget(
+//                TargetIdeInfo.builder()
+//                    .setKind("java_test")
+//                    .setLabel("//java/com/google/test:allTests")
+//                    .addSource(sourceRoot("java/com/google/test/TestClass1.java"))
+//                    .addSource(sourceRoot("java/com/google/test/TestClass2.java"))
+//                    .build())
+//            .build());
+//    registerProjectService(
+//        BlazeProjectDataManager.class, new MockBlazeProjectDataManager(builder.build()));
+//
+//    workspace.createPsiDirectory(new WorkspacePath("java/com/google/test"));
+//    PsiFile testClass1 =
+//        createAndIndexFile(
+//            new WorkspacePath("java/com/google/test/TestClass1.java"),
+//            "package com.google.test;",
+//            "@org.junit.runner.RunWith(org.junit.runners.JUnit4.class)",
+//            "public class TestClass1 {",
+//            "  @org.junit.Test",
+//            "  public void testMethod() {}",
+//            "}");
+//    PsiFile testClass2 =
+//        createAndIndexFile(
+//            new WorkspacePath("java/com/google/test/TestClass2.java"),
+//            "package com.google.test;",
+//            "@org.junit.runner.RunWith(org.junit.runners.JUnit4.class)",
+//            "public class TestClass2 {",
+//            "  @org.junit.Test",
+//            "  public void testMethod() {}",
+//            "}");
+//
+//    ConfigurationContext context =
+//        createContextFromMultipleElements(new PsiElement[] {testClass1, testClass2});
+//    ConfigurationFromContext fromContext =
+//        new TestContextRunConfigurationProducer().createConfigurationFromContext(context);
+//    assertThat(fromContext).isNotNull();
+//    assertThat(fromContext.getConfiguration()).isInstanceOf(BlazeCommandRunConfiguration.class);
+//
+//    BlazeCommandRunConfiguration config =
+//        (BlazeCommandRunConfiguration) fromContext.getConfiguration();
+//    assertThat(config.getTargets())
+//        .containsExactly(TargetExpression.fromStringSafe("//java/com/google/test:allTests"));
+//    assertThat(getTestFilterContents(config))
+//        .isEqualTo("--test_filter=\"com.google.test.TestClass1#|com.google.test.TestClass2#\"");
+//    assertThat(config.getName()).isEqualTo("Blaze test TestClass1 and 1 others");
+//    assertThat(getCommandType(config)).isEqualTo(BlazeCommandName.TEST);
+//  }
 
   @Test
   public void testNotProducedFromTestFilesInDifferentTestTargets() throws Throwable {
