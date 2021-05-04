@@ -24,7 +24,7 @@ import com.google.idea.blaze.base.lang.buildfile.psi.StringLiteral;
 import com.google.idea.blaze.base.lang.buildfile.references.AttributeSpecificStringLiteralReferenceProvider;
 import com.intellij.patterns.ElementPattern;
 import com.intellij.patterns.PatternCondition;
-import com.intellij.patterns.PatternConditionPlus;
+import com.google.idea.sdkcompat.platform.PatternConditionPlusCompat;
 import com.intellij.patterns.StandardPatterns;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.impl.PsiElementBase;
@@ -47,12 +47,12 @@ public class JavaClassQualifiedNameReference
                   .with(nameCondition(StandardPatterns.string().oneOf(JAVA_CLASS_STRING_TYPES))));
 
   private static PatternCondition<PsiElementBase> nameCondition(final ElementPattern<?> pattern) {
-    return new PatternConditionPlus<PsiElementBase, String>("_withPsiName", pattern) {
+    return new PatternConditionPlusCompat<PsiElementBase, String>("_withPsiName", pattern) {
       @Override
-      public boolean processValues(
+      public boolean doProcessValues(
           PsiElementBase t,
           ProcessingContext context,
-          PairProcessor<String, ProcessingContext> processor) {
+          PairProcessor<? super String, ? super ProcessingContext> processor) {
         return processor.process(t.getName(), context);
       }
     };

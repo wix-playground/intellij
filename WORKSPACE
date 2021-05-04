@@ -161,6 +161,14 @@ java_import(
 )
 """
 
+# Python plugin for IntelliJ CE. Required at compile-time for python-specific features.
+http_archive(
+    name = "python_2021_1",
+    build_file_content = _PYTHON_CE_BUILD_FILE,
+    sha256 = "698995055264104724ef0dcfb14d9fc11c8feabb1c72df85d998c0560338d4ab",
+    url = "https://plugins.jetbrains.com/files/7322/115103/python-ce-211.6693.34.zip",
+)
+
 # Go plugin for IntelliJ UE. Required at compile-time for Bazel integration.
 http_archive(
     name = "go_2020_1",
@@ -229,8 +237,8 @@ http_archive(
 http_archive(
     name = "scala_2021_1",
     build_file_content = _SCALA_BUILD_FILE,
-    sha256 = "5bed116a6d6d2dfde74c9304e40397f347680e3c56a3b755d1a32dc5cd98734c",
-    url = "https://plugins.jetbrains.com/files/1347/115572/scala-intellij-bin-2021.1.16.zip",
+    sha256 = "23afae2ebed1c84be6c8aa0bc48db66bf8e769c84b6b4417af5f33826e418be1",
+    url = "https://plugins.jetbrains.com/files/1347/118002/scala-intellij-bin-2021.1.17.zip",
 )
 
 # The plugin api for Android Studio 4.2. This is required to build ASwB,

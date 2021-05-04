@@ -74,23 +74,23 @@ class ExternalFormatterCodeStyleManager extends DelegatingCodeStyleManager {
   }
 
   @Override
-  public void reformatText(PsiFile file, Collection<TextRange> ranges)
+  public void doReformatText(PsiFile file, Collection<? extends TextRange> ranges)
       throws IncorrectOperationException {
     CustomFormatter formatter = getCustomFormatterForFile(file);
     if (formatter != null) {
       formatInternal(formatter, file, ranges);
     } else {
-      super.reformatText(file, ranges);
+      super.reformatText(file, (Collection<TextRange>) ranges);
     }
   }
 
   @Override
-  public void reformatTextWithContext(PsiFile file, Collection<TextRange> ranges) {
+  public void doReformatTextWithContext(PsiFile file, Collection<? extends TextRange> ranges) {
     CustomFormatter formatter = getCustomFormatterForFile(file);
     if (formatter != null) {
       formatInternal(formatter, file, ranges);
     } else {
-      super.reformatTextWithContext(file, ranges);
+      super.reformatTextWithContext(file, (Collection<TextRange>) ranges);
     }
   }
 
@@ -119,7 +119,7 @@ class ExternalFormatterCodeStyleManager extends DelegatingCodeStyleManager {
   }
 
   private void formatInternal(
-      CustomFormatter formatter, PsiFile file, Collection<TextRange> ranges) {
+      CustomFormatter formatter, PsiFile file, Collection<? extends TextRange> ranges) {
     ApplicationManager.getApplication().assertWriteAccessAllowed();
     PsiDocumentManager documentManager = PsiDocumentManager.getInstance(getProject());
     documentManager.commitAllDocuments();
