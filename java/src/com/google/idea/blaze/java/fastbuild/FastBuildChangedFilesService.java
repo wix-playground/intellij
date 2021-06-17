@@ -236,7 +236,7 @@ final class FastBuildChangedFilesService implements Disposable {
                           // We don't want to compile deleted files
                           .filter(event -> !(event instanceof VFileDeleteEvent))
                           .map(VFileEvent::getPath)
-                          .filter(f -> f.endsWith(".java"))
+                          .filter(f -> f.endsWith(".java") || f.endsWith(".scala"))
                           .map(File::new)
                           .collect(toImmutableSet());
 
@@ -298,7 +298,7 @@ final class FastBuildChangedFilesService implements Disposable {
             d -> {
               d.javaInfo().get().sources().stream()
                   .map(decoder::decode)
-                  .filter(f -> f.getName().endsWith(".java"))
+                  .filter(f -> f.getName().endsWith(".java") || f.getName().endsWith(".scala"))
                   .forEach(sourceFiles::add);
             });
     return ImmutableSet.copyOf(sourceFiles);

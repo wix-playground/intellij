@@ -41,6 +41,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -206,7 +207,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(jdkTwoLabel, jdkTwoData);
 
     // If this doesn't throw, the test passes.
-    compilerFactory.getCompilerFor(targetLabel, blazeData);
+    compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
   }
 
   @Test
