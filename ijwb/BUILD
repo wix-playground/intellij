@@ -115,11 +115,18 @@ repackaged_files(
     visibility = IJWB_PACKAGES_VISIBILIY,
 )
 
+repackaged_files(
+    name = "fast_build_scalac",
+    srcs = ["//scala:fast_build_scalac"],
+    prefix = "ijwb/lib",
+)
+
 intellij_plugin_debug_target(
     name = "ijwb_bazel_dev",
     deps = [
         ":aspect_directory",
         ":fast_build_javac",
+        ":fast_build_scalac",
         ":plugin_jar",
     ],
 )
@@ -129,6 +136,7 @@ plugin_deploy_zip(
     srcs = [
         ":aspect_directory",
         ":fast_build_javac",
+        ":fast_build_scalac",
         ":plugin_jar",
     ],
     zip_filename = "ijwb_bazel.zip",

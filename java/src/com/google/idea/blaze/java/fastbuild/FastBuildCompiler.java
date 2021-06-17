@@ -19,26 +19,27 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.idea.blaze.base.scope.BlazeContext;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.List;
 
-interface FastBuildCompiler {
+public interface FastBuildCompiler {
 
   void compile(BlazeContext context, CompileInstructions instructions) throws FastBuildException;
 
   @AutoValue
   abstract class CompileInstructions {
-    abstract ImmutableSet<File> filesToCompile();
+    public abstract ImmutableSet<File> filesToCompile();
 
-    abstract ImmutableList<File> classpath();
+    public abstract ImmutableList<File> classpath();
 
-    abstract File outputDirectory();
+    public abstract File outputDirectory();
 
     @Deprecated
-    abstract PrintWriter outputWriter();
+    public abstract PrintWriter outputWriter();
 
     abstract ImmutableSet<String> annotationProcessorClassNames();
 

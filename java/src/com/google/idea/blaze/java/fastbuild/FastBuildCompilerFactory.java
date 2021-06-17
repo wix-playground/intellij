@@ -18,7 +18,10 @@ package com.google.idea.blaze.java.fastbuild;
 import com.google.idea.blaze.base.model.primitives.Label;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+
+import java.io.File;
 import java.util.Map;
+import java.util.Set;
 
 interface FastBuildCompilerFactory {
 
@@ -26,6 +29,6 @@ interface FastBuildCompilerFactory {
     return ServiceManager.getService(project, FastBuildCompilerFactory.class);
   }
 
-  FastBuildCompiler getCompilerFor(Label label, Map<Label, FastBuildBlazeData> blazeData)
+  FastBuildCompiler getCompilerFor(Label label, Map<Label, FastBuildBlazeData> blazeData, Set<File> filesToCompiler)
       throws FastBuildException;
 }

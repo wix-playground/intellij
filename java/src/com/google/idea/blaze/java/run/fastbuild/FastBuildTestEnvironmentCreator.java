@@ -101,7 +101,7 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
 
     commandBuilder.addSystemProperty(
         getTestClassProperty(),
-        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo));
+        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo, testFilter));
 
     commandBuilder.setMainClass(getTestRunner());
 
@@ -140,6 +140,12 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
     addJvmOptsFromBlazeFlags(config, commandBuilder);
 
     for (String flag : targetJavaInfo.jvmFlags()) {
+      // Wix tooling injects some java arguments which makes java call fail
+      // Temporary filtering them out to see if it's makes run succeed
+      // ex: "-javaagent:$(rootpath @core_server_build_tools//test-agent/src/main/java/com/wixpress/agent:test-agent_deploy.jar)"
+      if (flag.contains("@core_server_build_tools")) {
+        continue;
+      }
       commandBuilder.addJvmArgument(
           LocationSubstitution.replaceLocations(flag, target, targetData.data()));
     }
