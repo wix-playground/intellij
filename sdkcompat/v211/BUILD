@@ -8,28 +8,22 @@ java_library(
     name = "v211",
     srcs = glob([
         "com/google/idea/sdkcompat/general/**",
-        "com/google/idea/sdkcompat/formatter/**",
         "com/google/idea/sdkcompat/platform/**",
         "com/google/idea/sdkcompat/python/**",
         "com/google/idea/sdkcompat/vcs/**",
     ]) + select_for_ide(
         android_studio = glob([
-            "com/google/idea/sdkcompat/cpp/**",
             "com/google/idea/sdkcompat/java/**",
         ]),
         clion = glob([
-            "com/google/idea/sdkcompat/clion/**",
-            "com/google/idea/sdkcompat/cpp/**",
             "com/google/idea/sdkcompat/typescript/**",
         ]),
         intellij = glob([
             "com/google/idea/sdkcompat/java/**",
-            "com/google/idea/sdkcompat/scala/**",
         ]),
         intellij_ue = glob([
             "com/google/idea/sdkcompat/golang/**",
             "com/google/idea/sdkcompat/java/**",
-            "com/google/idea/sdkcompat/scala/**",
             "com/google/idea/sdkcompat/typescript/**",
         ]),
     ),
@@ -40,6 +34,5 @@ java_library(
         "//third_party/go",
         "//third_party/javascript",
         "//third_party/python",
-        "//third_party/scala",
     ],
 )
