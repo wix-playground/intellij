@@ -82,7 +82,15 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
 
   private static final ImmutableSetMultimap<BuildSystem, Kind> SUPPORTED_KINDS =
       ImmutableSetMultimap.<BuildSystem, Kind>builder()
-          .putAll(BuildSystem.Bazel, JavaBlazeRules.RuleTypes.JAVA_TEST.getKind())
+          .putAll(
+            BuildSystem.Bazel,
+            JavaBlazeRules.RuleTypes.JAVA_TEST.getKind(),
+
+            // Temporary added scala_junit_test to support bazel fast build
+            // Can be extracted by implementing DefaultJavaProgramRunner with runnerId "FastBuildProgramRunner"/"FastBuildDebuggerRunner"
+            // And adding it as <programRunner ... /> in scala-contents.xml
+            Kind.fromRuleName("scala_junit_test")
+          )
           .putAll(
               BuildSystem.Blaze,
               AndroidBlazeRules.RuleTypes.ANDROID_ROBOLECTRIC_TEST.getKind(),

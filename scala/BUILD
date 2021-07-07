@@ -13,10 +13,28 @@ load(
 
 licenses(["notice"])  # Apache 2.0
 
+_FAST_BUILD_SCALAC_SRCS = ["src/com/google/idea/blaze/scala/fastbuild/ScalaCompiler.java"]
+
+# This interface is used by two classloaders (the plugin's and the compiler's) whose only shared
+# classes are those from the JRE, so it can't have any dependencies at all!
+java_library(
+    name = "fast_build_scalac_interface",
+    srcs = _FAST_BUILD_SCALAC_SRCS,
+)
+
+_FAST_BUILD_SCALAC_IMPL_SRCS = [
+    "src/com/google/idea/blaze/scala/fastbuild/ScalaCompilerImpl.java",
+]
+
 java_library(
     name = "scala",
-    srcs = glob(["src/**/*.java"]),
+    srcs = glob(
+        ["src/**/*.java"],
+        exclude = _FAST_BUILD_SCALAC_SRCS + _FAST_BUILD_SCALAC_IMPL_SRCS
+    ),
+    visibility = ["//visibility:public"],
     deps = [
+        ":fast_build_scalac_interface",
         "//base",
         "//intellij_platform_sdk:jsr305",
         "//intellij_platform_sdk:plugin_api",
@@ -25,6 +43,17 @@ java_library(
         "//sdkcompat",
         "//third_party/scala",
     ],
+)
+
+java_library(
+    name = "fast_build_scalac",
+    srcs = _FAST_BUILD_SCALAC_SRCS + _FAST_BUILD_SCALAC_IMPL_SRCS,
+    visibility = [
+        "//aswb:__pkg__",
+        "//ijwb:__pkg__",
+        "//scala/com/google/devtools/intellij/blaze/plugin:__subpackages__",
+    ],
+    deps = [],
 )
 
 optional_plugin_xml(
