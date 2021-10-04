@@ -214,6 +214,13 @@ message Dependency {
   DependencyType dependency_type = 2;
 }
 
+message ProtoIdeInfo {
+  repeated ArtifactLocation sources = 1;
+  string source_root = 2;
+  string import_prefix = 3;
+  string strip_import_prefix = 4;
+}
+
 message TargetIdeInfo {
   string kind_string = 1;
   TargetKey key = 2;
@@ -245,4 +252,5 @@ message TargetIdeInfo {
   TsIdeInfo ts_ide_info = 160;
   DartIdeInfo dart_ide_info = 170;
   KotlinToolchainIdeInfo kt_toolchain_ide_info = 180;
+  ProtoIdeInfo proto_ide_info = 190;
 }
