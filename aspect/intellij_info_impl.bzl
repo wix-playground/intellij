@@ -345,6 +345,24 @@ def _do_starlark_string_expansion(ctx, name, strings, extra_targets = []):
     return strings
 
 ##### Builders for individual parts of the aspect output
+def collect_proto_info(target, ctx, semantics, ide_info, ide_info_file, output_groups):
+    if not ProtoInfo in target:
+        return False
+
+    proto_info = target[ProtoInfo]
+    proto_output = depset([proto_info.direct_descriptor_set])
+
+    ide_info["proto_ide_info"] = struct_omit_none(
+        sources = sources_from_target(ctx),
+        source_root = proto_info.proto_source_root,
+        strip_import_prefix = ctx.rule.attr.strip_import_prefix,
+        import_prefix = ctx.rule.attr.import_prefix,
+    )
+
+    update_sync_output_groups(output_groups, "intellij-info-proto", depset([ide_info_file]))
+    update_sync_output_groups(output_groups, "intellij-compile-proto", proto_output)
+    update_sync_output_groups(output_groups, "intellij-resolve-proto", proto_output)
+    return True
 
 def collect_py_info(target, ctx, semantics, ide_info, ide_info_file, output_groups):
     """Updates Python-specific output groups, returns false if not a Python target."""
@@ -1199,6 +1217,7 @@ def intellij_info_aspect_impl(target, ctx, semantics):
     ide_info["test_info"] = build_test_info(ctx)
 
     handled = False
+    handled = collect_proto_info(target, ctx, semantics, ide_info, ide_info_file, output_groups) or handled
     handled = collect_py_info(target, ctx, semantics, ide_info, ide_info_file, output_groups) or handled
     handled = collect_cpp_info(target, ctx, semantics, ide_info, ide_info_file, output_groups) or handled
     handled = collect_c_toolchain_info(target, ctx, semantics, ide_info, ide_info_file, output_groups) or handled
