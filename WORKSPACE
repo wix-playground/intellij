@@ -462,7 +462,6 @@ http_archive(
     name = "io_bazel_rules_kotlin",
     sha256 = rules_kotlin_sha,
     urls = ["https://github.com/bazelbuild/rules_kotlin/releases/download/%s/rules_kotlin_release.tgz" % rules_kotlin_version],
-    sha256 = rules_kotlin_sha,
 )
 
 load("@io_bazel_rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories")
