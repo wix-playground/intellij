@@ -230,6 +230,12 @@ public final class BlazeJavaRunProfileState extends BlazeJavaDebuggableRunProfil
       if (isBinary) {
         command.addExeFlags(debugPortFlag(false, debugPort));
       } else {
+        // allow adding additional flags
+        String additionalDebugFlags = System.getenv("INTELLIJ_BAZEL_JAVA_DEBUG_FLAGS");
+        if (additionalDebugFlags != null) {
+          command.addBlazeFlags(additionalDebugFlags.trim().split("\\s+"));
+        }
+
         command.addBlazeFlags(BlazeFlags.JAVA_TEST_DEBUG);
         command.addBlazeFlags(debugPortFlag(true, debugPort));
       }
