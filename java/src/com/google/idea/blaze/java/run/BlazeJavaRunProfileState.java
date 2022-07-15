@@ -69,8 +69,11 @@ import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Blaze run configuration set up with an executor, program runner, and other settings, ready to
@@ -78,6 +81,7 @@ import javax.annotation.Nullable;
  * when using a debug executor.
  */
 public final class BlazeJavaRunProfileState extends BlazeJavaDebuggableRunProfileState {
+
   private static final Logger logger = Logger.getInstance(BlazeJavaRunProfileState.class);
   private static final String JAVA_RUNFILES_ENV = "JAVA_RUNFILES=";
   private static final String TEST_DIAGNOSTICS_OUTPUT_DIR_ENV = "TEST_DIAGNOSTICS_OUTPUT_DIR=";
@@ -261,6 +265,9 @@ public final class BlazeJavaRunProfileState extends BlazeJavaDebuggableRunProfil
       if (isBinary) {
         command.addExeFlags(debugPortFlag(false, debugPort));
       } else {
+        List<String> debugFlags = getAdditionalBlazeDebugFlags();
+        command.addBlazeFlags(debugFlags);
+
         command.addBlazeFlags(BlazeFlags.JAVA_TEST_DEBUG);
         command.addBlazeFlags(debugPortFlag(true, debugPort));
       }
@@ -271,6 +278,17 @@ public final class BlazeJavaRunProfileState extends BlazeJavaDebuggableRunProfil
 
     command.addExeFlags(handlerState.getExeFlagsState().getFlagsForExternalProcesses());
     return command;
+  }
+
+  @NotNull
+  private static List<String> getAdditionalBlazeDebugFlags() {
+    // Allow adding additional flags when running in debug mode.
+    // For example, it allows to disable remote execution when debugging.
+    String additionalDebugFlags = System.getenv("INTELLIJ_BAZEL_JAVA_DEBUG_FLAGS");
+    if (additionalDebugFlags != null) {
+      return Arrays.asList(additionalDebugFlags.trim().split("\\s+"));
+    }
+    return Collections.emptyList();
   }
 
   private ProcessHandler getScopedProcessHandler(
