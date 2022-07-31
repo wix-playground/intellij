@@ -26,7 +26,7 @@ final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmen
 
   // Bazel adds the Java launcher to the runfiles path when building a Java test target.
 //  private static final File STANDARD_JAVA_BINARY = new File("../local_jdk/bin/java");
-  private static final File STANDARD_JAVA_BINARY = new File("/Users/domasma/jdks/jdk11/Contents/Home/bin/java");
+  private static final File STANDARD_JAVA_BINARY = new File("/Users/ittaiz/jdks/jdk-9.0.4.jdk/Contents/Home/bin/java");
 
   @Override
   String getTestClassProperty() {

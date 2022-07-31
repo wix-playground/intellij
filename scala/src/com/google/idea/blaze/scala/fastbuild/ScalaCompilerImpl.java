@@ -6,8 +6,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScalaCompilerImpl implements ScalaCompiler {
-
-    private final File SCALA_SDK = new File("/Users/domasma/jdks/scala-2.13.6/bin/scalac");
+        //
+    private final File SCALA_SDK = new File("/Users/ittaiz/jdks/scala-2.12.16/bin/scalac");
 
     public void compile(
             Set<File> files,

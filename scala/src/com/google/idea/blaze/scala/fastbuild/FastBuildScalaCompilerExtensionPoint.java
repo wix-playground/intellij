@@ -22,7 +22,7 @@ public class FastBuildScalaCompilerExtensionPoint implements FastBuildCompilerEx
 
     // TODO Should be dynamically loaded from plugin's directory
     private static final File FAST_BUILD_SCALAC_LIB =
-            new File("/Users/domasma/Library/Caches/JetBrains/IntelliJIdea2020.1/plugins-sandbox/plugins/ijwb/lib/libfast_build_scalac.jar");
+            new File("/Users/ittaiz/Library/Caches/JetBrains/IntelliJIdea2022.1/plugins-sandbox/plugins/ijwb/lib/libfast_build_scalac.jar");
 
     @Override
     public FastBuildCompiler getCompiler(List<File> javacJars, List<File> bootClassPathJars, String sourceVersion, String targetVersion) {
