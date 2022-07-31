@@ -29,6 +29,6 @@ interface FastBuildCompilerFactory {
     return ServiceManager.getService(project, FastBuildCompilerFactory.class);
   }
 
-  FastBuildCompiler getCompilerFor(Label label, Map<Label, FastBuildBlazeData> blazeData, Set<File> filesToCompiler)
+  FastBuildCompiler getCompilerFor(Label label, Map<Label, FastBuildBlazeData> blazeData, Set<File> filesToCompile)
       throws FastBuildException;
 }

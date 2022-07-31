@@ -100,7 +100,7 @@ final class FastBuildCompilerFactoryImpl implements FastBuildCompilerFactory {
   }
 
   @Override
-  public FastBuildCompiler getCompilerFor(Label label, Map<Label, FastBuildBlazeData> blazeData, Set<File> files)
+  public FastBuildCompiler getCompilerFor(Label label, Map<Label, FastBuildBlazeData> blazeData, Set<File> filesToCompile)
       throws FastBuildException {
 
     JavaToolchainInfo javaToolchain = getJavaToolchain(label, blazeData);
@@ -112,7 +112,7 @@ final class FastBuildCompilerFactoryImpl implements FastBuildCompilerFactory {
     List<File> bootJars =
         projectData.getArtifactLocationDecoder().decodeAll(javaToolchain.bootClasspathJars());
 
-    boolean onlyScala = files.stream().allMatch(f -> f.getName().endsWith(".scala"));
+    boolean onlyScala = filesToCompile.stream().allMatch(f -> f.getName().endsWith(".scala"));
     if (onlyScala) {
       // Hacky way to substitute FastBuildCompiler with Scala compiler
       // Calls com.google.idea.blaze.scala.fastbuild.FastBuildScalaCompilerExtensionPoint
