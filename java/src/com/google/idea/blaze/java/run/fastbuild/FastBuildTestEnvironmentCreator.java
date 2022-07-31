@@ -101,7 +101,8 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
 
     commandBuilder.addSystemProperty(
         getTestClassProperty(),
-        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo, testFilter));
+//        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo, testFilter));
+        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo));
 
     commandBuilder.setMainClass(getTestRunner());
 

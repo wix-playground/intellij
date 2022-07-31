@@ -116,7 +116,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(dependencyLabel, dependencyData);
 
     try {
-      compilerFactory.getCompilerFor(targetLabel, blazeData);
+      compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
       fail("Should have thrown FastBuildException");
     } catch (FastBuildException e) {
       assertThat(e.getMessage()).contains("Couldn't find a Java toolchain");
@@ -160,7 +160,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(jdkTwoLabel, jdkTwoData);
 
     try {
-      compilerFactory.getCompilerFor(targetLabel, blazeData);
+      compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
       fail("Should have thrown FastBuildException");
     } catch (FastBuildException e) {
       assertThat(e.getMessage()).contains("Found multiple Java toolchains");
@@ -383,7 +383,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(targetLabel, targetData);
     blazeData.put(jdkLabel, jdkData);
 
-    return compilerFactory.getCompilerFor(targetLabel, blazeData);
+    return compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
   }
 
   private static BlazeContext createBlazeContext(Writer javacOutput) {
