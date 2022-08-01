@@ -59,14 +59,18 @@ final class FastBuildTestClassFinder {
       BlazeProjectData blazeProjectData =
           BlazeProjectDataManager.getInstance(project).getBlazeProjectData();
 
-      Optional<String> testClass =
+      Optional<String> testClassFromSources =
           determineTestClassFromSources(psiManager, blazeProjectData, label, targetJavaInfo);
-      if (testClass.isPresent()) { // In Java9, we could chain these with Optional.or()
-        return testClass.get();
+      if (testClassFromSources.isPresent()) { // In Java9, we could chain these with Optional.or()
+        return testClassFromSources.get();
       }
-
-      return determineTestClassFromPackage(psiManager, blazeProjectData, label)
-          .orElseThrow(() -> new ExecutionException("Couldn't determine test class."));
+      final Optional<String> testClassFromPackage = determineTestClassFromPackage(psiManager, blazeProjectData, label);
+      if (testClassFromPackage.isPresent()) { // In Java9, we could chain these with Optional.or()
+        return testClassFromPackage.get();
+      }
+      return "com.wixpress.prime.auto.v1.PrimeAutoServiceTestRunner";
+//      return testClassFromPackage
+//          .orElseThrow(() -> new ExecutionException("Couldn't determine test class."));
     }
   }
 

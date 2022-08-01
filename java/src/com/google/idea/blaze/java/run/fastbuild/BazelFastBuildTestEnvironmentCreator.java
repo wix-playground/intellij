@@ -20,6 +20,9 @@ import com.google.idea.blaze.base.model.primitives.Label;
 import com.google.idea.blaze.base.settings.BuildSystemName;
 import com.intellij.openapi.project.Project;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmentCreator {
@@ -41,11 +44,32 @@ final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmen
   @Override
   File getJavaBinFromLauncher(
       Project project, Label label, @Nullable Label javaLauncher, boolean swigdeps) {
-    if (javaLauncher == null) {
-      return STANDARD_JAVA_BINARY;
-    } else {
+    if (javaLauncher != null) {
       return new File(getTestBinary(label) + "_nativedeps");
+    } else {
+      final Path workspacePath = project.getWorkspaceFile().getParent().toNioPath();
+      final Path externalDir = workspacePath.resolve("../../bazel-bin/../../../external").toAbsolutePath();
+      if (!Files.exists(externalDir))
+        return new File("../local_jdk/bin/java");
+      final Optional<File> maybeMacosArm = tryToResolveJdkFor("macos_arm", externalDir);
+      if (maybeMacosArm.isPresent())
+          return maybeMacosArm.get();
+      final Optional<File> maybeMacos = tryToResolveJdkFor("macos", externalDir);
+      if (maybeMacos.isPresent())
+          return maybeMacos.get();
+      final Optional<File> maybeLinux = tryToResolveJdkFor("linux", externalDir);
+      if (maybeLinux.isPresent())
+          return maybeLinux.get();
+      return new File("../local_jdk/bin/java");
     }
+  }
+
+  private Optional<File> tryToResolveJdkFor(String os, Path externalDir) {
+    if (Files.exists(externalDir.resolve("wix_remotejdk_"+os))) {
+      return Optional.of(
+          externalDir.resolve("wix_remotejdk_" + os).resolve("bin").resolve("java").toFile());
+    }
+    return Optional.empty();
   }
 
   @Override

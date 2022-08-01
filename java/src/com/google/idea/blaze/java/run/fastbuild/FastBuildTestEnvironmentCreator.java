@@ -150,7 +150,18 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
       commandBuilder.addJvmArgument(
           LocationSubstitution.replaceLocations(flag, target, targetData.data()));
     }
+    //scala junit
+//    commandBuilder.addJvmArgument("-ea");
+//    commandBuilder.addJvmArgument(
+//        LocationSubstitution.replaceLocations(flag, target, targetData.data()));
+/*
+        archiveFlag = "-Dbazel.discover.classes.archives.file.paths=%s" %
+                      archives,
+        suffixesFlag = "-Dbazel.discover.classes.suffixes=%s" % ",".join(
+            ctx.attr.suffixes,
+        ),
 
+ */
     return commandBuilder.build();
   }
 
