@@ -26,10 +26,8 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmentCreator {
-
   // Bazel adds the Java launcher to the runfiles path when building a Java test target.
-//  private static final File STANDARD_JAVA_BINARY = new File("../local_jdk/bin/java");
-  private static final File STANDARD_JAVA_BINARY = new File("/Users/ittaiz/jdks/jdk-9.0.4.jdk/Contents/Home/bin/java");
+  private static final File STANDARD_JAVA_BINARY = new File("../local_jdk/bin/java");
 
   @Override
   String getTestClassProperty() {
@@ -65,6 +63,7 @@ final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmen
   }
 
   private Optional<File> tryToResolveJdkFor(String os, Path externalDir) {
+    //TODO coupled to wix case
     if (Files.exists(externalDir.resolve("wix_remotejdk_"+os))) {
       return Optional.of(
           externalDir.resolve("wix_remotejdk_" + os).resolve("bin").resolve("java").toFile());

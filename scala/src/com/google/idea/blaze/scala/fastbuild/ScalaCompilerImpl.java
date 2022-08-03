@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScalaCompilerImpl implements ScalaCompiler {
-        //
+        //See if we can take scalac from rules_Scala metadata
     private final File SCALA_SDK = new File("/Users/ittaiz/jdks/scala-2.12.16/bin/scalac");
 
     public void compile(

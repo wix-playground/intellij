@@ -39,6 +39,9 @@ def _fast_build_info_impl(target, ctx):
     elif java_common.JavaToolchainInfo != platform_common.ToolchainInfo and \
          java_common.JavaToolchainInfo in target:
         toolchain = target[java_common.JavaToolchainInfo]
+    elif hasattr(ctx.rule.attr, "java_compile_toolchain") and ctx.rule.attr.java_compile_toolchain and \
+         java_common.JavaToolchainInfo in ctx.rule.attr.java_compile_toolchain:
+        toolchain = ctx.rule.attr.java_compile_toolchain[java_common.JavaToolchainInfo]
     else:
         toolchain = None
     if toolchain:
