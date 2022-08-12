@@ -129,6 +129,12 @@ public class BlazeBuildFileRunConfigurationProducer
     if (ruleType == null || label == null) {
       return null;
     }
+
+    if (ruleType.equals("specs2_unit_test") || ruleType.equals("specs2_ite2e_test")
+        || ruleType.equals("specs2_mixed_test")) {
+      label = Label.create(label + "_test_runner");
+    }
+
     return new BuildTarget(rule, Kind.guessRuleType(ruleType), label);
   }
 
