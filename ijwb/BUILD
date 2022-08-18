@@ -121,12 +121,33 @@ repackaged_files(
     prefix = "ijwb/lib",
 )
 
+repackaged_files(
+    name = "fast_build_scalac2",
+    srcs = ["//scala:fast_build_scalac2_deploy.jar"],
+    prefix = "ijwb/lib",
+)
+
+repackaged_files(
+    name = "fast_build_scalac2_deps",
+    srcs = ["//scala:fast_build_scalac2_deps_deploy.jar"],
+    prefix = "ijwb/lib",
+)
+
+repackaged_files(
+    name = "compiler_bridge_2_12",
+    srcs = ["//scala:compiler_bridge_2_12"],
+    prefix = "ijwb/lib",
+)
+
 intellij_plugin_debug_target(
     name = "ijwb_bazel_dev",
     deps = [
         ":aspect_directory",
         ":fast_build_javac",
-        ":fast_build_scalac",
+        #        ":fast_build_scalac",
+        ":fast_build_scalac2",
+        ":fast_build_scalac2_deps",
+        ":compiler_bridge_2_12",
         ":plugin_jar",
     ],
 )
@@ -136,7 +157,10 @@ plugin_deploy_zip(
     srcs = [
         ":aspect_directory",
         ":fast_build_javac",
-        ":fast_build_scalac",
+        #        ":fast_build_scalac",
+        ":fast_build_scalac2",
+        ":fast_build_scalac2_deps",
+        ":compiler_bridge_2_12",
         ":plugin_jar",
     ],
     zip_filename = "ijwb_bazel.zip",

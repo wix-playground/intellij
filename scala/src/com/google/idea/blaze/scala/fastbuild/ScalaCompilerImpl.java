@@ -13,7 +13,8 @@ public class ScalaCompilerImpl implements ScalaCompiler {
             Set<File> files,
             List<File> classpath,
             File destination,
-            List<File> bootClasses
+            List<File> bootClasses,
+            File compilerBridge
     ) throws IOException {
 
         String classpathArg = classpath.stream().map(File::getAbsolutePath).collect(Collectors.joining(":"));

@@ -14,6 +14,10 @@ load(
     "//:build-visibility.bzl",
     "PLUGIN_PACKAGES_VISIBILITY",
 )
+load(
+    "@io_bazel_rules_scala//scala:scala.bzl",
+    "scala_library",
+)
 
 licenses(["notice"])  # Apache 2.0
 
@@ -30,11 +34,15 @@ _FAST_BUILD_SCALAC_IMPL_SRCS = [
     "src/com/google/idea/blaze/scala/fastbuild/ScalaCompilerImpl.java",
 ]
 
+_FAST_BUILD_SCALAC_IMPL_SRCS2 = [
+    "src/com/google/idea/blaze/scala/fastbuild/ScalaCompilerImpl2.scala",
+]
+
 java_library(
     name = "scala",
     srcs = glob(
         ["src/**/*.java"],
-        exclude = _FAST_BUILD_SCALAC_SRCS + _FAST_BUILD_SCALAC_IMPL_SRCS
+        exclude = _FAST_BUILD_SCALAC_SRCS + _FAST_BUILD_SCALAC_IMPL_SRCS,
     ),
     visibility = ["//visibility:public"],
     deps = [
@@ -60,6 +68,61 @@ java_library(
     deps = [],
 )
 
+scala_library(
+    name = "fast_build_scalac2",
+    srcs = _FAST_BUILD_SCALAC_SRCS + _FAST_BUILD_SCALAC_IMPL_SRCS2,
+    visibility = [
+        "//aswb:__pkg__",
+        "//ijwb:__pkg__",
+        "//scala/com/google/devtools/intellij/blaze/plugin:__subpackages__",
+    ],
+    deps = [
+        "//base",
+        "@org_scala_sbt_compiler_interface",
+        "@org_scala_sbt_util_control_2_12",
+        "@org_scala_sbt_util_interface",
+        "@org_scala_sbt_util_logging_2_12",
+        "@org_scala_sbt_zinc_2_12",
+        "@org_scala_sbt_zinc_classpath_2_12",
+        "@org_scala_sbt_zinc_compile_core_2_12",
+        "@org_scala_sbt_zinc_core_2_12",
+    ],
+)
+
+scala_library(
+    name = "fast_build_scalac2_deps",
+    srcs = [],
+    visibility = [
+        "//aswb:__pkg__",
+        "//ijwb:__pkg__",
+        "//scala/com/google/devtools/intellij/blaze/plugin:__subpackages__",
+    ],
+    deps = [
+        "@org_scala_sbt_compiler_interface",
+        "@org_scala_sbt_util_control_2_12",
+        "@org_scala_sbt_util_interface",
+        "@org_scala_sbt_util_logging_2_12",
+        "@org_scala_sbt_zinc_2_12",
+        "@org_scala_sbt_zinc_classpath_2_12",
+        "@org_scala_sbt_zinc_compile_core_2_12",
+        "@org_scala_sbt_zinc_core_2_12",
+    ],
+)
+
+scala_library(
+    name = "compiler_bridge_2_12",
+    srcs = [
+        "@compiler_bridge_2_12//:src",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_scala_lang_scala_compiler",
+        "@org_scala_lang_scala_library",
+        "@org_scala_lang_scala_reflect",
+        "@org_scala_sbt_compiler_interface",
+        "@org_scala_sbt_util_interface",
+    ],
+)
 optional_plugin_xml(
     name = "optional_xml",
     module = "org.intellij.scala",

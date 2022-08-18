@@ -199,7 +199,7 @@ http_archive(
 _SCALA_BUILD_FILE = """
 java_import(
     name = "scala",
-    jars = glob(["Scala/lib/*.jar"]),
+    jars = glob(["Scala/lib/*.jar"], exclude = ["Scala/lib/compiler-interface-1.6.1.jar"]),
     visibility = ["//visibility:public"],
 )
 """
@@ -534,3 +534,21 @@ buildbuddy_deps()
 load("@io_buildbuddy_buildbuddy_toolchain//:rules.bzl", "buildbuddy")
 
 buildbuddy(name = "buildbuddy_toolchain")
+
+load("//:zinc.bzl", zinc_deps = "dependencies")
+
+zinc_deps()
+
+_SRC_FILEGROUP_BUILD_FILE_CONTENT = """
+filegroup(
+    name = "src",
+    srcs = glob(["**/*.scala", "**/*.java"]),
+    visibility = ["//visibility:public"]
+)"""
+
+http_archive(
+    name = "compiler_bridge_2_12",
+    build_file_content = _SRC_FILEGROUP_BUILD_FILE_CONTENT,
+    sha256 = "24cd30dcb37c2b24f962118f49489c98a66b49600cfd7fbb9eab68475ddd56a2",
+    url = "https://repo.maven.apache.org/maven2/org/scala-sbt/compiler-bridge_2.12/1.3.4/compiler-bridge_2.12-1.3.4-sources.jar",
+)

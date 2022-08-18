@@ -117,7 +117,7 @@ final class FastBuildCompilerFactoryImpl implements FastBuildCompilerFactory {
       // Hacky way to substitute FastBuildCompiler with Scala compiler
       // Calls com.google.idea.blaze.scala.fastbuild.FastBuildScalaCompilerExtensionPoint
       return FastBuildCompilerExtensionPoint.EP_NAME.getExtensions()[0]
-              .getCompiler(javacJars, bootJars, javaToolchain.sourceVersion(), javaToolchain.targetVersion());
+              .getCompiler(javacJars, bootJars, javaToolchain.sourceVersion(), javaToolchain.targetVersion(), projectData.getBlazeInfo());
     } else {
       Javac javac = createCompiler(javacJars);
       return new JavacRunner(

@@ -11,7 +11,9 @@ public interface ScalaCompiler {
             Set<File> files,
             List<File> classpath,
             File destination,
-            List<File> bootClasses
+            List<File> bootClasses,
+            List<File> scalaSdkJars,
+            File compilerBridge
     ) throws IOException;
 
 }
