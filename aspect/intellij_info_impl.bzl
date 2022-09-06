@@ -174,13 +174,8 @@ def library_artifact(java_output, rule_kind = None):
         return None
     src_jars = get_source_jars(java_output)
 
-    if rule_kind != None and rule_kind.startswith("scala"):
-        interface_jar = None
-    else:
-        interface_jar = artifact_location(java_output.ijar)
-
     return struct_omit_none(
-        interface_jar = interface_jar,
+        interface_jar = None,
         jar = artifact_location(java_output.class_jar),
         source_jar = artifact_location(src_jars[0]) if src_jars else None,
         source_jars = [artifact_location(f) for f in src_jars],
