@@ -261,6 +261,8 @@ public final class BlazeJavaWorkspaceImporter {
       workspaceBuilder.jdeps.addAll(
           jars.stream()
               .filter(jar -> !jar.contains("-kt-ijar.jar") && !jar.contains("-kt-src.jar"))
+              .map(jar -> jar.contains("/_ijar/") ? jar : jar.replace("-ijar.jar", ".jar"))
+              .map(jar -> jar.replace("-hjar.jar", ".jar"))
               .collect(toImmutableList()));
     }
 
