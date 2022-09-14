@@ -440,6 +440,10 @@ intellij_plugin(
 intellij_unit_test_suite(
     name = "unit_tests",
     srcs = glob(["tests/unittests/**/*.java"]),
+    data = ["@local_jdk//:bin/java"],
+    jvm_flags = [
+        "-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false",
+    ],
     test_package_root = "com.google.idea.blaze.base",
     deps = [
         ":base",
