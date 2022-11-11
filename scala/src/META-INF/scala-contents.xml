@@ -42,6 +42,7 @@
         implementation="com.google.idea.blaze.scala.run.producers.GenerateDeployableJarTaskProvider"/>
     <postStartupActivity implementation="com.google.idea.blaze.scala.run.producers.NonBlazeProducerSuppressor"/>
     <attachSourcesProvider implementation="com.google.idea.blaze.scala.libraries.BlazeScalaAttachSourceProvider"/>
+    <library.javaSourceRootDetector implementation="com.google.idea.blaze.scala.libraries.ScalaRootsDetector"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.sbt">
