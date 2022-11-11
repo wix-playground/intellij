@@ -20,19 +20,29 @@ import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.google.idea.blaze.base.model.LibraryFilesProvider;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
+import com.intellij.openapi.progress.DumbProgressIndicator;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.Library.ModifiableModel;
+import com.intellij.openapi.roots.libraries.ui.RootDetector;
+import com.intellij.openapi.roots.ui.configuration.LibrarySourceRootDetectorUtil;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.FileUtilRt;
+import com.intellij.openapi.vfs.JarFileSystem;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.util.io.URLUtil;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Modifies {@link Library} content in {@link Library.ModifiableModel}. */
+/**
+ * Modifies {@link Library} content in {@link Library.ModifiableModel}.
+ */
 public class LibraryModifier {
+
   private static final Logger logger = Logger.getInstance(LibraryModifier.class);
   private final LibraryFilesProvider libraryFilesProvider;
   private final Library.ModifiableModel modifiableModel;
@@ -47,7 +57,9 @@ public class LibraryModifier {
     return modifiableModel;
   }
 
-  /** Writes the library content to its {@link Library.ModifiableModel}. */
+  /**
+   * Writes the library content to its {@link Library.ModifiableModel}.
+   */
   public void updateModifiableModel(BlazeProjectData blazeProjectData) {
     removeAllContents();
     for (String classFileUrl : libraryFilesProvider.getClassFilesUrls(blazeProjectData)) {
@@ -55,8 +67,44 @@ public class LibraryModifier {
     }
 
     for (String sourceFileUrl : libraryFilesProvider.getSourceFilesUrls(blazeProjectData)) {
-      addRoot(sourceFileUrl, OrderRootType.SOURCES);
+      detectSourceRoots(sourceFileUrl).forEach(root -> {
+        modifiableModel.addRoot(root, OrderRootType.SOURCES);
+      });
     }
+  }
+
+  private List<VirtualFile> detectSourceRoots(String sourceJar) {
+    List<VirtualFile> roots = new ArrayList<>();
+
+    if (sourceJar == null) {
+      return roots;
+    }
+
+    VirtualFile srcFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(sourceJar);
+    if (srcFile == null) {
+      return roots;
+    }
+
+    VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(srcFile);
+    if (jarRoot == null) {
+      return roots;
+    }
+
+    List<RootDetector> detectors = LibrarySourceRootDetectorUtil.JAVA_SOURCE_ROOT_DETECTOR
+        .getExtensionList();
+
+    return detect(detectors, jarRoot);
+  }
+
+  private List<VirtualFile> detect(List<RootDetector> detectors, VirtualFile jarRoot) {
+    List<VirtualFile> roots = new ArrayList<>();
+
+    for (RootDetector detector : detectors) {
+      DumbProgressIndicator progressIndicator = new DumbProgressIndicator();
+      roots.addAll(detector.detectRoots(jarRoot, progressIndicator));
+    }
+
+    return roots;
   }
 
   private ModifiableModel getLibraryModifiableModel(
