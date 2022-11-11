@@ -13,7 +13,6 @@ import com.google.idea.blaze.java.sync.model.BlazeJarLibrary;
 import com.google.idea.blaze.scala.sync.model.BlazeScalaSyncData;
 import com.google.idea.common.experiments.BoolExperiment;
 import com.google.idea.common.util.Transactions;
-import com.google.idea.sdkcompat.general.BaseSdkCompat;
 import com.intellij.codeInsight.AttachSourcesProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.TransactionGuard;
@@ -28,15 +27,16 @@ import com.intellij.psi.PsiManager;
 import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nullable;
+import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProviderImpl;
+import org.jetbrains.annotations.NotNull;
 
 public class BlazeScalaAttachSourceProvider implements AttachSourcesProvider {
 
   private static final BoolExperiment attachAutomatically =
       new BoolExperiment("blaze.attach.source.jars.automatically.3", true);
 
-  @Override
-  public Collection<AttachSourcesAction> getActions(
-      List<LibraryOrderEntry> orderEntries, final PsiFile psiFile) {
+  public Collection<AttachSourcesAction> getAdapterActions(
+      List<? extends LibraryOrderEntry> orderEntries, final PsiFile psiFile) {
     Project project = psiFile.getProject();
     BlazeProjectData blazeProjectData =
         BlazeProjectDataManager.getInstance(project).getBlazeProjectData();
@@ -87,7 +87,7 @@ public class BlazeScalaAttachSourceProvider implements AttachSourcesProvider {
     }
 
     return ImmutableList.of(
-        new AttachSourcesAction() {
+        new AttachSourcesActionAdapter() {
           @Override
           public String getName() {
             return "Attach Blaze Source Jars";
@@ -99,7 +99,8 @@ public class BlazeScalaAttachSourceProvider implements AttachSourcesProvider {
           }
 
           @Override
-          public ActionCallback perform(List<LibraryOrderEntry> orderEntriesContainingFile) {
+          public ActionCallback adapterPerform(
+              List<? extends LibraryOrderEntry> orderEntriesContainingFile) {
             ActionCallback callback =
                 new ActionCallback().doWhenDone(() -> navigateToSource(psiFile));
             Transactions.submitTransaction(
@@ -140,8 +141,7 @@ public class BlazeScalaAttachSourceProvider implements AttachSourcesProvider {
     ApplicationManager.getApplication()
         .runWriteAction(
             () -> {
-              IdeModifiableModelsProvider modelsProvider =
-                  BaseSdkCompat.createModifiableModelsProvider(project);
+              IdeModifiableModelsProvider modelsProvider = new IdeModifiableModelsProviderImpl(project);
               for (BlazeLibrary blazeLibrary : librariesToAttachSourceTo) {
                 // Make sure we don't do it twice
                 if (AttachedSourceJarManager.getInstance(project)
@@ -152,7 +152,7 @@ public class BlazeScalaAttachSourceProvider implements AttachSourcesProvider {
                     .setHasSourceJarAttached(blazeLibrary.key, true);
                 LibraryEditor.updateLibrary(
                     project,
-                    blazeProjectData.getArtifactLocationDecoder(),
+                    blazeProjectData,
                     modelsProvider,
                     blazeLibrary);
               }
@@ -175,4 +175,20 @@ public class BlazeScalaAttachSourceProvider implements AttachSourcesProvider {
     }
     return syncData.getImportResult().libraries.get(libraryKey);
   }
+
+    @NotNull
+    @Override
+    public Collection<AttachSourcesAction> getActions(
+            List<? extends LibraryOrderEntry> orderEntries, final PsiFile psiFile) {
+        return getAdapterActions(orderEntries, psiFile);
+    }
+
+    public static abstract class AttachSourcesActionAdapter implements AttachSourcesAction {
+        public abstract ActionCallback adapterPerform(List<? extends LibraryOrderEntry> orderEntriesContainingFile);
+
+
+        public ActionCallback perform(List<? extends LibraryOrderEntry> orderEntriesContainingFile) {
+            return adapterPerform(orderEntriesContainingFile);
+        }
+    }
 }
