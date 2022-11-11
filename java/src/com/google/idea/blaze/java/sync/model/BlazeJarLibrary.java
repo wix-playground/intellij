@@ -31,11 +31,19 @@ import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
 import com.google.idea.blaze.java.libraries.AttachedSourceJarManager;
 import com.google.idea.blaze.java.libraries.JarCache;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.DumbProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.Library.ModifiableModel;
+import com.intellij.openapi.roots.libraries.ui.RootDetector;
+import com.intellij.openapi.roots.ui.configuration.LibrarySourceRootDetectorUtil;
+import com.intellij.openapi.vfs.JarFileSystem;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
@@ -141,9 +149,41 @@ public final class BlazeJarLibrary extends BlazeLibrary {
       for (ArtifactLocation srcJar : libraryArtifact.getSourceJars()) {
         File sourceJar = jarCache.getCachedSourceJar(artifactLocationDecoder, srcJar);
         if (sourceJar != null && sourceJar.exists()) {
-          libraryModel.addRoot(pathToUrl(sourceJar), OrderRootType.SOURCES);
+          detectSourceRoots(sourceJar).forEach(root -> {
+            libraryModel.addRoot(root, OrderRootType.SOURCES);
+          });
         }
       }
+    }
+
+    private List<VirtualFile> detectSourceRoots(File sourceJar) {
+      List<VirtualFile> roots = new ArrayList<>();
+
+      VirtualFile srcFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(sourceJar);
+      if (srcFile == null) {
+        return roots;
+      }
+
+      VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(srcFile);
+      if (jarRoot == null) {
+        return roots;
+      }
+
+      List<RootDetector> detectors = LibrarySourceRootDetectorUtil.JAVA_SOURCE_ROOT_DETECTOR
+          .getExtensionList();
+
+      return detect(detectors, jarRoot);
+    }
+
+    private List<VirtualFile> detect(List<RootDetector> detectors, VirtualFile jarRoot) {
+      List<VirtualFile> roots = new ArrayList<>();
+
+      for (RootDetector detector : detectors) {
+        DumbProgressIndicator progressIndicator = new DumbProgressIndicator();
+        roots.addAll(detector.detectRoots(jarRoot, progressIndicator));
+      }
+
+      return roots;
     }
 
     @Override
