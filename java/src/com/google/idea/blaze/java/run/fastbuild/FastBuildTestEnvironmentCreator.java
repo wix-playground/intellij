@@ -66,7 +66,8 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
   abstract String getTestRunner();
 
   abstract File getJavaBinFromLauncher(
-      Project project, Label label, @Nullable Label javaLauncher, boolean swigdeps);
+      Project project, Label label, @Nullable Label javaLauncher, boolean swigdeps,
+      String javaExecutableExecPath, Path workingDir);
 
   GeneralCommandLine createCommandLine(
       Project project,
@@ -95,13 +96,14 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
 
     commandBuilder.setJavaBinary(
         getJavaBinFromLauncher(
-            project, target, getLauncher(fastBuildInfo).orElse(null), getSwigdeps(fastBuildInfo)));
+            project, target, getLauncher(fastBuildInfo).orElse(null), getSwigdeps(fastBuildInfo),
+            getJavaExecutableExecPath(fastBuildInfo), workingDir));
 
     fastBuildInfo.classpath().forEach(commandBuilder::addClasspathElement);
 
     commandBuilder.addSystemProperty(
         getTestClassProperty(),
-        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo));
+        FastBuildTestClassFinder.getInstance(project).getTestClass(target, targetJavaInfo, testFilter));
 
     commandBuilder.setMainClass(getTestRunner());
 
@@ -154,6 +156,16 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
     checkState(targetData.javaInfo().isPresent(), "Couldn't find Java info for target %s", label);
     JavaInfo javaInfo = targetData.javaInfo().get();
     return javaInfo.launcher();
+  }
+
+  private String getJavaExecutableExecPath(FastBuildInfo fastBuildInfo) {
+    Label label = fastBuildInfo.label();
+    FastBuildBlazeData targetData = fastBuildInfo.blazeData().get(label);
+    checkState(targetData != null, "Couldn't find data for target %s", label);
+    checkState(targetData.javaToolchainInfo().isPresent(), "Couldn't find Java toolchain info for target %s", label);
+    checkState(targetData.javaToolchainInfo().get().javaRuntime().isPresent(), "Couldn't find Java runtime info for target %s", label);
+    String javaExecutableExecPath = targetData.javaToolchainInfo().get().javaRuntime().get().javaExecutableExecPath();
+    return javaExecutableExecPath;
   }
 
   private static boolean getSwigdeps(FastBuildInfo fastBuildInfo) {
