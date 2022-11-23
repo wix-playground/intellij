@@ -215,7 +215,7 @@ public abstract class FastBuildBlazeData {
 
   /** Data about a java_toolchain rule. */
   @AutoValue
-  abstract static class JavaToolchainInfo {
+  public abstract static class JavaToolchainInfo {
     public abstract ImmutableList<ArtifactLocation> javacJars();
 
     public abstract ImmutableList<ArtifactLocation> bootClasspathJars();
@@ -224,13 +224,16 @@ public abstract class FastBuildBlazeData {
 
     public abstract String targetVersion();
 
+    public abstract Optional<JavaRuntime> javaRuntime();
+
     static JavaToolchainInfo create(
         ImmutableList<ArtifactLocation> javacJars,
         ImmutableList<ArtifactLocation> bootJars,
         String sourceVersion,
-        String targetVersion) {
+        String targetVersion,
+        JavaRuntime javaRuntime) {
       return new AutoValue_FastBuildBlazeData_JavaToolchainInfo(
-          javacJars, bootJars, sourceVersion, targetVersion);
+          javacJars, bootJars, sourceVersion, targetVersion, Optional.ofNullable(javaRuntime));
     }
 
     static JavaToolchainInfo fromProto(FastBuildInfo.JavaToolchainInfo javaToolchainInfo) {
@@ -242,11 +245,30 @@ public abstract class FastBuildBlazeData {
           javaToolchainInfo.getBootclasspathJarsList().stream()
               .map(ArtifactLocation::fromProto)
               .collect(toImmutableList());
+      JavaRuntime javaRuntime = null;
+      if (javaToolchainInfo.hasJavaRuntime()) {
+        javaRuntime = JavaRuntime.fromProto(javaToolchainInfo.getJavaRuntime());
+      }
+
       return create(
           javacJars,
           bootJars,
           javaToolchainInfo.getSourceVersion(),
-          javaToolchainInfo.getTargetVersion());
+          javaToolchainInfo.getTargetVersion(), javaRuntime);
+    }
+  }
+  /** Data about a java_runtime rule. */
+  @AutoValue
+  public abstract static class JavaRuntime {
+    public abstract String javaExecutableExecPath();
+
+    static JavaRuntime create(
+        String javaExecutableExecPath) {
+      return new AutoValue_FastBuildBlazeData_JavaRuntime(javaExecutableExecPath);
+    }
+
+    static JavaRuntime fromProto(FastBuildInfo.JavaRuntimeInfo javaRuntime) {
+      return create(javaRuntime.getJavaExecutableExecPath());
     }
   }
 }
