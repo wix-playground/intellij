@@ -60,7 +60,7 @@ public class FastBuildTestClassFinderTest extends BlazeIntegrationTestCase {
 
     String testClass =
         FastBuildTestClassFinder.getInstance(getProject())
-            .getTestClass(Label.create("//javatests/com/google/devtools:AllTests"), javaInfo);
+            .getTestClass(Label.create("//javatests/com/google/devtools:AllTests"), javaInfo, null);
 
     assertThat(testClass).isEqualTo("my.fake.TestClass");
   }
@@ -94,7 +94,7 @@ public class FastBuildTestClassFinderTest extends BlazeIntegrationTestCase {
 
     String testClass =
         FastBuildTestClassFinder.getInstance(getProject())
-            .getTestClass(Label.create("//javatests:AllTests"), javaInfo);
+            .getTestClass(Label.create("//javatests:AllTests"), javaInfo, null);
 
     assertThat(testClass).isEqualTo("com.google.hello.AllTests");
   }
@@ -112,7 +112,7 @@ public class FastBuildTestClassFinderTest extends BlazeIntegrationTestCase {
 
     String testClass =
         FastBuildTestClassFinder.getInstance(getProject())
-            .getTestClass(Label.create("//javatests:AllTests"), javaInfo);
+            .getTestClass(Label.create("//javatests:AllTests"), javaInfo, null);
 
     assertThat(testClass).isEqualTo("com.google.hello.AllTests");
   }
