@@ -57,4 +57,9 @@ message JavaToolchainInfo {
   string target_version = 3;
   repeated ArtifactLocation javac_jars = 4;
   repeated ArtifactLocation bootclasspath_jars = 5;
+  JavaRuntimeInfo java_runtime = 6;
+}
+
+message JavaRuntimeInfo {
+  string java_executable_exec_path = 1;
 }
