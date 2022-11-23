@@ -21,6 +21,8 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.idea.blaze.base.BlazeIntegrationTestCase;
+import com.google.idea.blaze.base.logging.NoopEventLoggingService;
 import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.google.idea.blaze.base.model.MockBlazeProjectDataBuilder;
 import com.google.idea.blaze.base.model.MockBlazeProjectDataManager;
@@ -40,8 +42,10 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,7 +54,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link FastBuildCompilerFactoryImpl}. */
 @RunWith(JUnit4.class)
-public final class FastBuildCompilerFactoryImplTest {
+public final class FastBuildCompilerFactoryImplTest extends BlazeIntegrationTestCase {
 
   private static final String AUTO_VALUE_PROCESSOR =
       "com.google.auto.value.processor.AutoValueProcessor";
@@ -68,7 +72,8 @@ public final class FastBuildCompilerFactoryImplTest {
           /* javacJars= */ ImmutableList.of(),
           /* bootJars= */ ImmutableList.of(),
           /* sourceVersion= */ "8",
-          /* targetVersion= */ "8");
+          /* targetVersion= */ "8",
+          null);
   private static final JavaInfo JAVA_LIBRARY_WITHOUT_SOURCES = JavaInfo.builder().build();
 
   private FastBuildCompilerFactory compilerFactory;
@@ -83,14 +88,16 @@ public final class FastBuildCompilerFactoryImplTest {
   }
 
   @Before
-  public void setUp() {
+  public void setUpForThisTestClass() {
     BlazeProjectData projectData =
         MockBlazeProjectDataBuilder.builder()
             .setArtifactLocationDecoder(new MockArtifactLocationDecoder())
             .build();
     BlazeProjectDataManager projectDataManager = new MockBlazeProjectDataManager(projectData);
-    compilerFactory =
-        FastBuildCompilerFactoryImpl.createForTest(projectDataManager, FAST_BUILD_JAVAC_JAR);
+    final FastBuildCompilerExtensionPoint fastBuildJavaCompilerExtensionPoint =
+        new FastBuildJavaCompilerExtensionPoint(NoopEventLoggingService::new, () -> FAST_BUILD_JAVAC_JAR);
+    super.registerExtension(FastBuildCompilerExtensionPoint.EP_NAME, fastBuildJavaCompilerExtensionPoint);
+    compilerFactory = FastBuildCompilerFactoryImpl.createForTest(projectDataManager);
   }
 
   @Test
@@ -115,7 +122,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(dependencyLabel, dependencyData);
 
     try {
-      compilerFactory.getCompilerFor(targetLabel, blazeData);
+      compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
       fail("Should have thrown FastBuildException");
     } catch (FastBuildException e) {
       assertThat(e.getMessage()).contains("Couldn't find a Java toolchain");
@@ -152,14 +159,15 @@ public final class FastBuildCompilerFactoryImplTest {
                     /* javacJars= */ ImmutableList.of(),
                     /* bootJars= */ ImmutableList.of(),
                     /* sourceVersion= */ "12345",
-                    /* targetVersion= */ "9876"))
+                    /* targetVersion= */ "9876",
+                    null))
             .build();
     blazeData.put(targetLabel, targetData);
     blazeData.put(jdkOneLabel, jdkOneData);
     blazeData.put(jdkTwoLabel, jdkTwoData);
 
     try {
-      compilerFactory.getCompilerFor(targetLabel, blazeData);
+      compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
       fail("Should have thrown FastBuildException");
     } catch (FastBuildException e) {
       assertThat(e.getMessage()).contains("Found multiple Java toolchains");
@@ -198,7 +206,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(jdkTwoLabel, jdkTwoData);
 
     // If this doesn't throw, the test passes.
-    compilerFactory.getCompilerFor(targetLabel, blazeData);
+    compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
   }
 
   @Test
@@ -286,7 +294,8 @@ public final class FastBuildCompilerFactoryImplTest {
                   /* javacJars= */ ImmutableList.of(),
                   /* bootJars= */ ImmutableList.of(),
                   /* sourceVersion= */ "8",
-                  /* targetVersion= */ "8"))
+                  /* targetVersion= */ "8",
+                  null))
           .compile(createBlazeContext(javacOutput), createCompileInstructions(java).build());
       fail("Should have thrown FastBuildIncrementalCompileException");
     } catch (FastBuildIncrementalCompileException e) {
@@ -378,7 +387,7 @@ public final class FastBuildCompilerFactoryImplTest {
     blazeData.put(targetLabel, targetData);
     blazeData.put(jdkLabel, jdkData);
 
-    return compilerFactory.getCompilerFor(targetLabel, blazeData);
+    return compilerFactory.getCompilerFor(targetLabel, blazeData, Collections.emptySet());
   }
 
   private static BlazeContext createBlazeContext(Writer javacOutput) {
