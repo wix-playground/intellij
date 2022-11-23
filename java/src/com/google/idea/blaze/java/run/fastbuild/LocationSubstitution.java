@@ -31,7 +31,7 @@ final class LocationSubstitution {
   //   \$\((locations?)\s+([^)]+)\s*\)
   // The first group is 'location' or 'locations'. The second group is the target.
   private static final Pattern LOCATION_PATTERN =
-      Pattern.compile("\\$\\((locations?)\\s+([^)]+)\\s*\\)");
+      Pattern.compile("\\$\\((locations?|rootpaths?)\\s+([^)]+)\\s*\\)");
 
   private LocationSubstitution() {}
 
