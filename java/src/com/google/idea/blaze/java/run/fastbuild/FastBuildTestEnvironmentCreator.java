@@ -88,7 +88,7 @@ abstract class FastBuildTestEnvironmentCreator implements BuildSystemExtensionPo
     // blaze-out/k8-opt/bin/path/to/package/MyLabel.runfiles/io_bazel
     String workspaceName = targetData.workspaceName();
     Path runfilesDir =
-        Paths.get(fastBuildInfo.deployJar().getParent(), target.targetName() + ".runfiles");
+        Paths.get(fastBuildInfo.deployJar().getParent(), target.targetName() + ".sh.runfiles");
     Path workingDir = runfilesDir.resolve(workspaceName);
 
     JavaCommandBuilder commandBuilder = new JavaCommandBuilder();
