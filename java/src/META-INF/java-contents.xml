@@ -175,5 +175,7 @@
                     interface="com.google.idea.blaze.java.run.hotswap.HotSwapCommandBuilder"/>
     <extensionPoint qualifiedName="com.google.idea.blaze.blazeJavaDebuggingSetupHandler"
                     interface="com.google.idea.blaze.java.run.BlazeJavaDebuggingSetupHandler"/>
+    <extensionPoint qualifiedName="com.google.idea.blaze.FastBuildCompilerExtensionPoint"
+      interface="com.google.idea.blaze.java.fastbuild.FastBuildCompilerExtensionPoint"/>
   </extensionPoints>
 </idea-plugin>
