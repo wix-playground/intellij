@@ -118,24 +118,6 @@ intellij_plugin(
 intellij_unit_test_suite(
     name = "unit_tests",
     srcs = glob(["tests/unittests/**/*.java"]),
-    # Used for the compiler tests
-    data = [
-        ":auto_value_lib_deploy.jar",
-        ":auto_value_plugin_lib_deploy.jar",
-        ":fast_build_javac",
-        ":guava_lib_deploy.jar",
-        ":truth_lib_deploy.jar",
-    ],
-    jvm_flags = [
-        "-Dauto_value.jar=$(location :auto_value_lib_deploy.jar)",
-        "-Dauto_value_plugin.jar=$(location :auto_value_plugin_lib_deploy.jar)",
-        "-Dfast_build_javac.jar=$(location :fast_build_javac)",
-        "-Dguava.jar=$(location :guava_lib_deploy.jar)",
-        "-Dtruth.jar=$(location :truth_lib_deploy.jar)",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-    ],
     test_package_root = "com.google.idea.blaze.java",
     deps = [
         ":java",
@@ -189,6 +171,24 @@ intellij_integration_test_suite(
         # b/292251337 exclude this test to pass copybara test temporarily
         exclude = ["tests/integrationtests/com/google/idea/blaze/java/qsync/ClassFileJavaSourceFinderTest.java"],
     ),
+    # Used for the compiler tests
+    data = [
+        ":auto_value_lib_deploy.jar",
+        ":auto_value_plugin_lib_deploy.jar",
+        ":fast_build_javac",
+        ":guava_lib_deploy.jar",
+        ":truth_lib_deploy.jar",
+    ],
+    jvm_flags = [
+        "-Dauto_value.jar=$(location :auto_value_lib_deploy.jar)",
+        "-Dauto_value_plugin.jar=$(location :auto_value_plugin_lib_deploy.jar)",
+        "-Dfast_build_javac.jar=$(location :fast_build_javac)",
+        "-Dguava.jar=$(location :guava_lib_deploy.jar)",
+        "-Dtruth.jar=$(location :truth_lib_deploy.jar)",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    ],
     required_plugins = "com.google.idea.blaze.java",
     test_package_root = "com.google.idea.blaze.java",
     runtime_deps = [
