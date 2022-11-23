@@ -72,7 +72,7 @@ abstract class FastBuildAspectStrategy implements BuildSystemExtensionPoint {
       BlazeVersionData versionData,
       String... additionalOutputGroups) {
     String outputGroups =
-        Stream.concat(Arrays.stream(additionalOutputGroups), Stream.of(OUTPUT_GROUP))
+        Stream.concat(Arrays.stream(additionalOutputGroups).map(s -> "+"+s), Stream.of("+" + OUTPUT_GROUP))
             .collect(joining(","));
     blazeCommandBuilder
         .addBlazeFlags(getAspectFlags(versionData))
