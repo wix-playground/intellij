@@ -43,6 +43,9 @@ def _fast_build_info_impl(target, ctx):
     elif java_common.JavaToolchainInfo != platform_common.ToolchainInfo and \
          java_common.JavaToolchainInfo in target:
         toolchain = target[java_common.JavaToolchainInfo]
+    elif hasattr(ctx.rule.attr, "java_compile_toolchain") and ctx.rule.attr.java_compile_toolchain and \
+         java_common.JavaToolchainInfo in ctx.rule.attr.java_compile_toolchain:
+        toolchain = ctx.rule.attr.java_compile_toolchain[java_common.JavaToolchainInfo]
     else:
         toolchain = None
     if toolchain:
@@ -53,11 +56,17 @@ def _fast_build_info_impl(target, ctx):
         bootclasspath_jars = []
         if hasattr(toolchain, "bootclasspath"):
             bootclasspath_jars = [artifact_location(f) for f in toolchain.bootclasspath.to_list()]
+        java_runtime = struct()
+        if hasattr(toolchain, "java_runtime"):
+            java_runtime = struct_omit_none(
+                java_executable_exec_path = toolchain.java_runtime.java_executable_exec_path,
+            )
         info["java_toolchain_info"] = struct_omit_none(
             javac_jars = javac_jars,
             bootclasspath_jars = bootclasspath_jars,
             source_version = toolchain.source_version,
             target_version = toolchain.target_version,
+            java_runtime = java_runtime,
         )
     if JavaInfo in target:
         write_output = True
@@ -103,6 +112,13 @@ def _fast_build_info_impl(target, ctx):
             ),
         )
         info["android_info"] = android_info
+
+    if ProtoInfo in target:
+        write_output = True
+        proto_info = {
+            "sources": sources_from_target(ctx),
+        }
+        info["proto_info"] = struct_omit_none(**proto_info)
 
     if write_output:
         output_file = ctx.actions.declare_file(target.label.name + ".ide-fast-build-info.txt")
