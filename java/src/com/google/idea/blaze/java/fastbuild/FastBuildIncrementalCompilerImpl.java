@@ -82,7 +82,7 @@ final class FastBuildIncrementalCompilerImpl implements FastBuildIncrementalComp
                 }
 
                 compilerFactory
-                    .getCompilerFor(label, buildOutput.blazeData())
+                    .getCompilerFor(label, buildOutput.blazeData(), changedSourceInfo.pathsToCompile)
                     .compile(context, instructions);
               } else {
                 context.output(new PrintOutput("No modified files to compile."));
@@ -151,7 +151,7 @@ final class FastBuildIncrementalCompilerImpl implements FastBuildIncrementalComp
     boolean addedSources = false;
     for (ArtifactLocation sourceArtifact : javaInfo.sources()) {
       File sourceFile = artifactLocationDecoder.decode(sourceArtifact);
-      if (sourceFile.getName().endsWith(".java")
+      if ((sourceFile.getName().endsWith(".java") || sourceFile.getName().endsWith(".scala"))
           && modifiedSinceBuild.contains(sourceFile)
           && sourceFile.exists()) {
         sourceFiles.add(sourceFile);
