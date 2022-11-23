@@ -207,4 +207,34 @@ public class LocationSubstitutionTest {
       assertThat(e.getMessage()).contains(SOURCE_TARGET.toString());
     }
   }
+
+  @Test
+  public void testRootpathSubstitution() throws ExecutionException {
+    ImmutableMap<Label, ImmutableSet<ArtifactLocation>> data =
+        ImmutableMap.of(
+            Label.create("//test/location:location"),
+            ImmutableSet.of(
+                ArtifactLocation.builder().setRelativePath("test/location.txt").build()));
+
+    String result =
+        LocationSubstitution.replaceLocations(
+            "foo$(rootpath //test/location)bar", SOURCE_TARGET, data);
+
+    assertThat(result).isEqualTo("footest/location.txtbar");
+  }
+
+  @Test
+  public void testRootpathsWithSingleArtifact() throws ExecutionException {
+    ImmutableMap<Label, ImmutableSet<ArtifactLocation>> data =
+        ImmutableMap.of(
+            Label.create("//test/location:location"),
+            ImmutableSet.of(
+                ArtifactLocation.builder().setRelativePath("test/location.txt").build()));
+
+    String result =
+        LocationSubstitution.replaceLocations(
+            "foo$(rootpaths //test/location)bar", SOURCE_TARGET, data);
+
+    assertThat(result).isEqualTo("footest/location.txtbar");
+  }
 }
