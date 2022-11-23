@@ -29,6 +29,7 @@ message FastBuildBlazeData {
   AndroidInfo android_info = 5;
   JavaInfo java_info = 6;
   JavaToolchainInfo java_toolchain_info = 7;
+  ProtoInfo proto_info = 8;
 }
 
 message Data {
@@ -57,4 +58,13 @@ message JavaToolchainInfo {
   string target_version = 3;
   repeated ArtifactLocation javac_jars = 4;
   repeated ArtifactLocation bootclasspath_jars = 5;
+  JavaRuntimeInfo java_runtime = 6;
+}
+
+message JavaRuntimeInfo {
+  string java_executable_exec_path = 1;
+}
+
+message ProtoInfo {
+  repeated ArtifactLocation sources = 1;
 }

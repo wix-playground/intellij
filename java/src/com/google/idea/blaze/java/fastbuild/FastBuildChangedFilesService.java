@@ -156,8 +156,12 @@ final class FastBuildChangedFilesService implements Disposable {
     switch (data.state) {
       case WAITING_FOR_SOURCES:
       case COLLECTING:
+        if (!data.changedNonCompilableSources.isEmpty()) {
+          return ChangedSources.fullCompile();
+        }
         ChangedSources result = ChangedSources.withChangedSources(data.changedSources);
         data.changedSources = new HashSet<>();
+        data.changedNonCompilableSources = new HashSet<>();
         return result;
       case TOO_MANY_CHANGES:
         // Don't reset anything in data; it'll get reset when a new build starts and newBuild() is
@@ -176,7 +180,7 @@ final class FastBuildChangedFilesService implements Disposable {
     // TODO(b/145386688): Access should be guarded by enclosing instance
     // 'com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService' of 'data', which is not
     // accessible in this scope; instead found: 'this'
-    data.updateChangedSources(files);
+    data.updateChangedSources(files, ImmutableSet.of());
   }
 
   private synchronized void subscribe() {
@@ -230,25 +234,39 @@ final class FastBuildChangedFilesService implements Disposable {
                     return null;
                   }
 
-                  ImmutableSet<File> changedFiles =
+                  ImmutableSet<String> changedFilePaths =
                       events.stream()
                           // We don't want to compile deleted files
                           .filter(event -> !(event instanceof VFileDeleteEvent))
                           .map(VFileEvent::getPath)
-                          .filter(f -> f.endsWith(".java"))
+                          .collect(toImmutableSet());
+
+                  ImmutableSet<File> changedCompilableFiles =
+                      changedFilePaths.stream()
+                          .filter(f -> f.endsWith(".java") || f.endsWith(".scala"))
                           .map(File::new)
                           .collect(toImmutableSet());
 
-                  if (changedFiles.isEmpty()) {
-                    return null;
-                  }
+                  ImmutableSet<File> changedProtoFiles =
+                      changedFilePaths.stream()
+                          .filter(f -> f.endsWith(".proto"))
+                          .map(File::new)
+                          .collect(toImmutableSet());
+
                   // TODO(b/145386688): Access should be guarded by enclosing instance
                   // 'com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService' of 'data',
                   // which is not accessible in this scope
-                  labelData.values().forEach(data -> data.updateChangedSources(changedFiles));
+
+                  if (!changedCompilableFiles.isEmpty() || !changedProtoFiles.isEmpty()) {
+                    labelData.values()
+                        .forEach(data -> data.updateChangedSources(changedCompilableFiles,
+                            changedProtoFiles));
+                  }
+
                   return null;
                 }
               });
+
       Futures.addCallback(submit, new LogErrorCallback(), executor);
     }
 
@@ -284,7 +302,7 @@ final class FastBuildChangedFilesService implements Disposable {
   private ImmutableSet<File> getSourceFilesRecursively(
       Label label, Map<Label, FastBuildBlazeData> blazeData) {
     FastBuildBlazeData data = blazeData.get(label);
-    if (data == null || !data.javaInfo().isPresent()) {
+    if (data == null || (!data.javaInfo().isPresent() && !data.protoInfo().isPresent())) {
       return ImmutableSet.of();
     }
     Set<File> sourceFiles = new HashSet<>();
@@ -295,10 +313,16 @@ final class FastBuildChangedFilesService implements Disposable {
         .breadthFirst(data)
         .forEach(
             d -> {
-              d.javaInfo().get().sources().stream()
-                  .map(decoder::decode)
-                  .filter(f -> f.getName().endsWith(".java"))
-                  .forEach(sourceFiles::add);
+              if (d.javaInfo().isPresent()) {
+                d.javaInfo().get().sources().stream()
+                    .map(decoder::decode)
+                    .filter(f -> f.getName().endsWith(".java") || f.getName().endsWith(".scala"))
+                    .forEach(sourceFiles::add);
+              } else if (d.protoInfo().isPresent()) {
+                d.protoInfo().get().sources().stream()
+                    .map(decoder::decode)
+                    .forEach(sourceFiles::add);
+              }
             });
     return ImmutableSet.copyOf(sourceFiles);
   }
@@ -308,7 +332,7 @@ final class FastBuildChangedFilesService implements Disposable {
     return labelData.dependencies().stream()
         .map(map::get)
         .filter(Objects::nonNull)
-        .filter(data -> data.javaInfo().isPresent())
+        .filter(data -> (data.javaInfo().isPresent() || data.protoInfo().isPresent()))
         .collect(toImmutableSet());
   }
 
@@ -319,9 +343,11 @@ final class FastBuildChangedFilesService implements Disposable {
   }
 
   private static class Data {
+
     // State only moves forward, never backward (WAITING_FOR_SOURCES->COLLECTING->TOO_MANY_CHANGES)
     State state = State.WAITING_FOR_SOURCES;
     Set<File> changedSources = new HashSet<>();
+    Set<File> changedNonCompilableSources = new HashSet<>();
     ImmutableSet<File> sources = null;
 
     static Data waitingForSources() {
@@ -333,22 +359,30 @@ final class FastBuildChangedFilesService implements Disposable {
       checkState(state.equals(State.WAITING_FOR_SOURCES));
       state = State.COLLECTING;
       this.sources = sources;
-      ImmutableSet<File> allModifiedFiles = ImmutableSet.copyOf(changedSources);
+      ImmutableSet<File> allCompilableModifiedFiles = ImmutableSet.copyOf(changedSources);
+      ImmutableSet<File> allNonCompilableModifiedFiles = ImmutableSet.copyOf(
+          changedNonCompilableSources);
       changedSources.clear();
-      updateChangedSources(allModifiedFiles);
+      changedNonCompilableSources.clear();
+      // Any files modified, before the sources were set, get checked against the sources once they're set
+      updateChangedSources(allCompilableModifiedFiles, allNonCompilableModifiedFiles);
     }
 
     @GuardedBy("FastBuildChangedFilesService.this")
-    void updateChangedSources(Set<File> changedFiles) {
+    void updateChangedSources(Set<File> changedCompilableFiles,
+        Set<File> changedNonCompilableFiles) {
 
-      if (state.equals(State.TOO_MANY_CHANGES)) {
+      // If a single non-compilable file is detected, a full compile is needed, no need to check files further
+      if (state.equals(State.TOO_MANY_CHANGES) || !changedNonCompilableSources.isEmpty()) {
         return;
       }
 
       if (state.equals(State.WAITING_FOR_SOURCES)) {
-        changedSources.addAll(changedFiles);
+        changedSources.addAll(changedCompilableFiles);
+        changedNonCompilableSources.addAll(changedNonCompilableFiles);
       } else if (state.equals(State.COLLECTING)) {
-        changedSources.addAll(intersection(changedFiles, sources));
+        changedSources.addAll(intersection(changedCompilableFiles, sources));
+        changedNonCompilableSources.addAll(intersection(changedNonCompilableFiles, sources));
       }
       if (changedSources.size() > MAX_FILES_TO_COLLECT) {
         changedSources = ImmutableSet.of();
