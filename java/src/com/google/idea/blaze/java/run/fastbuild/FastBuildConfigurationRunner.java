@@ -67,21 +67,21 @@ public final class FastBuildConfigurationRunner implements BlazeCommandRunConfig
   private static final Logger logger = Logger.getInstance(FastBuildConfigurationRunner.class);
 
   static final Key<AtomicReference<FastBuildInfo>> BUILD_INFO_KEY =
-      Key.create("blaze.java.fastRun.buildInfo");
+          Key.create("blaze.java.fastRun.buildInfo");
   static final Key<AtomicReference<BlazeContext>> BLAZE_CONTEXT =
-      Key.create("blaze.java.fastRun.blazeContext");
+          Key.create("blaze.java.fastRun.blazeContext");
 
   /** Returns false if this isn't a 'blaze test' invocation. */
   static boolean canRun(RunProfile runProfile) {
     BlazeCommandRunConfiguration blazeCfg =
-        BlazeCommandRunConfigurationRunner.getBlazeConfig(runProfile);
+            BlazeCommandRunConfigurationRunner.getBlazeConfig(runProfile);
     if (blazeCfg == null) {
       return false;
     }
     return Objects.equals(blazeCfg.getHandler().getCommandName(), BlazeCommandName.TEST)
-        && FastBuildService.getInstance(blazeCfg.getProject())
+            && FastBuildService.getInstance(blazeCfg.getProject())
             .supportsFastBuilds(
-                Blaze.getBuildSystemName(blazeCfg.getProject()), blazeCfg.getTargetKind());
+                    Blaze.getBuildSystemName(blazeCfg.getProject()), blazeCfg.getTargetKind());
   }
 
   @Override
@@ -102,18 +102,18 @@ public final class FastBuildConfigurationRunner implements BlazeCommandRunConfig
     }
     Project project = env.getProject();
     BlazeCommandRunConfiguration configuration =
-        BlazeCommandRunConfigurationRunner.getBlazeConfig(env.getRunProfile());
+            BlazeCommandRunConfigurationRunner.getBlazeConfig(env.getRunProfile());
     BlazeCommandRunConfigurationCommonState handlerState =
-        (BlazeCommandRunConfigurationCommonState)
-            Objects.requireNonNull(configuration).getHandler().getState();
+            (BlazeCommandRunConfigurationCommonState)
+                    Objects.requireNonNull(configuration).getHandler().getState();
 
     checkState(configuration.getSingleTarget() != null);
     Label label = (Label) configuration.getSingleTarget();
 
     String binaryPath =
-        handlerState.getBlazeBinaryState().getBlazeBinary() != null
-            ? handlerState.getBlazeBinaryState().getBlazeBinary()
-            : Blaze.getBuildSystemProvider(project).getBinaryPath(project);
+            handlerState.getBlazeBinaryState().getBlazeBinary() != null
+                    ? handlerState.getBlazeBinaryState().getBlazeBinary()
+                    : Blaze.getBuildSystemProvider(project).getBinaryPath(project);
 
     SaveUtil.saveAllFiles();
     FastBuildService buildService = FastBuildService.getInstance(project);
@@ -122,29 +122,29 @@ public final class FastBuildConfigurationRunner implements BlazeCommandRunConfig
     FocusBehavior consolePopupBehavior = BlazeUserSettings.getInstance().getShowBlazeConsoleOnRun();
     FocusBehavior problemsViewFocus = BlazeUserSettings.getInstance().getShowProblemsViewOnRun();
     BlazeContext context =
-        BlazeContext.create()
-            .push(
-                new ToolWindowScope.Builder(
-                        project,
-                        new Task(project, "Fast Build " + label.targetName(), Task.Type.FAST_BUILD))
-                    .setPopupBehavior(consolePopupBehavior)
-                    .setIssueParsers(
-                        BlazeIssueParser.defaultIssueParsers(
-                            project,
-                            WorkspaceRoot.fromProject(project),
-                            ContextType.RunConfiguration))
-                    .build())
-            .push(new ProblemsViewScope(project, problemsViewFocus))
-            .push(new IdeaLogScope())
-            .push(new FastBuildLogDataScope());
+            BlazeContext.create()
+                    .push(
+                            new ToolWindowScope.Builder(
+                                    project,
+                                    new Task(project, "Fast Build " + label.targetName(), Task.Type.FAST_BUILD))
+                                    .setPopupBehavior(consolePopupBehavior)
+                                    .setIssueParsers(
+                                            BlazeIssueParser.defaultIssueParsers(
+                                                    project,
+                                                    WorkspaceRoot.fromProject(project),
+                                                    ContextType.RunConfiguration))
+                                    .build())
+                    .push(new ProblemsViewScope(project, problemsViewFocus))
+                    .push(new IdeaLogScope())
+                    .push(new FastBuildLogDataScope());
 
     try {
       buildFuture =
-          buildService.createBuild(
-              context,
-              label,
-              binaryPath,
-              handlerState.getBlazeFlagsState().getFlagsForExternalProcesses());
+              buildService.createBuild(
+                      context,
+                      label,
+                      binaryPath,
+                      handlerState.getBlazeFlagsState().getFlagsForExternalProcesses());
       FastBuildInfo fastBuildInfo = buildFuture.get();
       env.getCopyableUserData(BUILD_INFO_KEY).set(fastBuildInfo);
       env.getCopyableUserData(BLAZE_CONTEXT).set(context);
@@ -153,10 +153,10 @@ public final class FastBuildConfigurationRunner implements BlazeCommandRunConfig
       cancelBuildFuture(buildFuture);
     } catch (CancellationException e) {
       ExecutionUtil.handleExecutionError(
-          env.getProject(),
-          env.getExecutor().getToolWindowId(),
-          env.getRunProfile(),
-          new RunCanceledByUserException());
+              env.getProject(),
+              env.getExecutor().getToolWindowId(),
+              env.getRunProfile(),
+              new RunCanceledByUserException());
     } catch (FastBuildException e) {
       if (!(e instanceof BlazeBuildError)) {
         // no need to log blaze build errors; they're expected
@@ -167,12 +167,12 @@ public final class FastBuildConfigurationRunner implements BlazeCommandRunConfig
       logger.warn(e);
       if (e.getCause() instanceof FastBuildIncrementalCompileException) {
         handleJavacError(
-            env,
-            project,
-            label,
-            buildService,
-            (FastBuildIncrementalCompileException) e.getCause(),
-            context);
+                env,
+                project,
+                label,
+                buildService,
+                (FastBuildIncrementalCompileException) e.getCause(),
+                context);
       } else {
         ExecutionUtil.handleExecutionError(env, new ExecutionException(e.getCause()));
       }
@@ -189,37 +189,37 @@ public final class FastBuildConfigurationRunner implements BlazeCommandRunConfig
   }
 
   private static void handleJavacError(
-      ExecutionEnvironment env,
-      Project project,
-      Label label,
-      FastBuildService buildService,
-      FastBuildIncrementalCompileException e,
-      BlazeContext context) {
+          ExecutionEnvironment env,
+          Project project,
+          Label label,
+          FastBuildService buildService,
+          FastBuildIncrementalCompileException e,
+          BlazeContext context) {
 
     context.output(IssueOutput.error(e.getMessage() + "\n").build());
 
     // TODO(b/240126599): Consider supporting outputting Hyperlinks to the Blaze console again.
     NotificationGroupManager.getInstance()
-        .getNotificationGroup("Fastbuild failed notification")
-        .createNotification(
-            "To run the tests again with a fresh "
-                + Blaze.getBuildSystemName(project)
-                + " build, click",
-            NotificationType.ERROR)
-        .addAction(
-            NotificationAction.createExpiring(
-                "here", (event, notification) -> rerunTests(env, label, buildService)))
-        .notify(project);
+            .getNotificationGroup("Fastbuild failed notification")
+            .createNotification(
+                    "To run the tests again with a fresh "
+                            + Blaze.getBuildSystemName(project)
+                            + " build, click",
+                    NotificationType.ERROR)
+            .addAction(
+                    NotificationAction.createExpiring(
+                            "here", (event, notification) -> rerunTests(env, label, buildService)))
+            .notify(project);
 
     ExecutionUtil.handleExecutionError(
-        env, new ExecutionException("See the Blaze Console for javac output", e.getCause()));
+            env, new ExecutionException("See the Blaze Console for javac output", e.getCause()));
   }
 
   private static void rerunTests(
-      ExecutionEnvironment env, Label label, FastBuildService buildService) {
+          ExecutionEnvironment env, Label label, FastBuildService buildService) {
     buildService.resetBuild(label);
     ExecutionUtil.restart(env);
     EventLoggingService.getInstance()
-        .logEvent(FastBuildConfigurationRunner.class, "rerun_tests_with_blaze_link_clicked");
+            .logEvent(FastBuildConfigurationRunner.class, "rerun_tests_with_blaze_link_clicked");
   }
 }
