@@ -20,11 +20,12 @@ import com.google.idea.blaze.base.model.primitives.Label;
 import com.google.idea.blaze.base.settings.BlazeUserSettings;
 import com.google.idea.blaze.base.settings.BuildSystemName;
 import com.intellij.openapi.project.Project;
-import javax.annotation.Nullable;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import javax.annotation.Nullable;
 
 final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmentCreator {
-
   // Bazel adds the Java launcher to the runfiles path when building a Java test target.
   private static final File STANDARD_JAVA_BINARY = new File("../local_jdk/bin/java");
 
@@ -47,9 +48,16 @@ final class BazelFastBuildTestEnvironmentCreator extends FastBuildTestEnvironmen
       Label label,
       @Nullable Label javaLauncher,
       boolean swigdeps,
+      String runfilesDir,
+      String javaExecutableExecPath,
       String runfilesPath) {
-    if (javaLauncher == null || isDefaultLauncher(javaLauncher)) {
-      return getStandardJavaBinary(runfilesPath);
+    if (javaLauncher == null) {
+        final Path p = Path.of(runfilesPath).resolve(javaExecutableExecPath);
+        if (Files.exists(p)) {
+            return p.toFile();
+        } else {
+            return STANDARD_JAVA_BINARY;
+        }
     } else {
       return new File(getTestBinary(label) + "_nativedeps");
     }
