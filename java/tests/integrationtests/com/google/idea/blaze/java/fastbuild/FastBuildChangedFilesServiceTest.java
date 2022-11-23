@@ -38,6 +38,7 @@ import com.google.idea.blaze.base.model.primitives.WorkspacePath;
 import com.google.idea.blaze.base.settings.BuildSystemName;
 import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
 import com.google.idea.blaze.java.fastbuild.FastBuildBlazeData.JavaInfo;
+import com.google.idea.blaze.java.fastbuild.FastBuildBlazeData.ProtoInfo;
 import com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService.ChangedSources;
 import com.google.idea.blaze.java.fastbuild.FastBuildState.BuildOutput;
 import java.io.File;
@@ -227,7 +228,7 @@ public class FastBuildChangedFilesServiceTest extends BlazeIntegrationTestCase {
             new File("deploy.jar"),
             ImmutableMap.of(
                 Label.create("//a:a"),
-                    sources("a.java").setDependencies(deps("//b:b", "//c:c")).build(),
+                sources("a.java").setDependencies(deps("//b:b", "//c:c")).build(),
                 Label.create("//b:b"), sources("b.java").setDependencies(deps("//d:d")).build(),
                 Label.create("//c:c"), sources("c.java").setDependencies(deps("//b:b")).build(),
                 Label.create("//d:d"), sources("d.java").build()),
@@ -348,6 +349,26 @@ public class FastBuildChangedFilesServiceTest extends BlazeIntegrationTestCase {
         .containsExactly(new File("/foo/bar.txt"), new File("/what/fun.txt"));
   }
 
+  @Test
+  public void suggestsRecompilationWithNonCompilableSourceModified() {
+    BuildOutput buildOutput =
+        BuildOutput.create(
+            new File("deploy.jar"),
+            ImmutableMap.of(
+                Label.create("//java:all_files"),
+                protoSources("proto/com/google/HelloService.proto").build()),
+            BLAZE_INFO);
+    changedFilesService.newBuild(
+        Label.create("//java:all_files"), Futures.immediateFuture(buildOutput));
+
+    workspace.createFile(WorkspacePath.createIfValid("proto/com/google/HelloService.proto"));
+
+    ChangedSources changedSources =
+        changedFilesService.getAndResetChangedSources(Label.create("//java:all_files"));
+
+    assertThat(changedSources.needsFullCompile()).isTrue();
+  }
+
   private static com.google.idea.blaze.base.ideinfo.ArtifactLocation source(String relativePath) {
     return com.google.idea.blaze.base.ideinfo.ArtifactLocation.fromProto(
         protoSourceArtifact(relativePath));
@@ -358,16 +379,28 @@ public class FastBuildChangedFilesServiceTest extends BlazeIntegrationTestCase {
   }
 
   private static FastBuildBlazeData.Builder sources(String... artifacts) {
-    Set<ArtifactLocation> sourceArtifacts =
-        Arrays.stream(artifacts)
-            .map(FastBuildChangedFilesServiceTest::protoSourceArtifact)
-            .collect(toSet());
     return FastBuildBlazeData.builder()
         .setLabel(Label.create("//ignore:ignore"))
         .setWorkspaceName("io_bazel")
         .setJavaInfo(
             JavaInfo.fromProto(
-                FastBuildInfo.JavaInfo.newBuilder().addAllSources(sourceArtifacts).build()));
+                FastBuildInfo.JavaInfo.newBuilder().addAllSources(sourceArtifacts(artifacts))
+                    .build()));
+  }
+
+  private static FastBuildBlazeData.Builder protoSources(String... artifacts) {
+    return FastBuildBlazeData.builder()
+        .setLabel(Label.create("//ignore:ignore"))
+        .setWorkspaceName("io_bazel")
+        .setProtoInfo(ProtoInfo.fromProto(
+            FastBuildInfo.ProtoInfo.newBuilder().addAllSources(sourceArtifacts(artifacts))
+                .build()));
+  }
+
+  private static Set<ArtifactLocation> sourceArtifacts(String... artifacts) {
+    return Arrays.stream(artifacts)
+        .map(FastBuildChangedFilesServiceTest::protoSourceArtifact)
+        .collect(toSet());
   }
 
   private static ImmutableList<Label> deps(String... deps) {
