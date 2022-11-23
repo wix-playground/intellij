@@ -34,6 +34,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 final class FastBuildTestClassFinder {
 
@@ -47,7 +48,7 @@ final class FastBuildTestClassFinder {
     return ServiceManager.getService(project, FastBuildTestClassFinder.class);
   }
 
-  String getTestClass(Label label, JavaInfo targetJavaInfo) throws ExecutionException {
+  String getTestClass(Label label, JavaInfo targetJavaInfo, @Nullable String testFilter) throws ExecutionException {
     if (targetJavaInfo.testClass().isPresent()) {
       return targetJavaInfo.testClass().get();
     } else {
@@ -59,15 +60,24 @@ final class FastBuildTestClassFinder {
       BlazeProjectData blazeProjectData =
           BlazeProjectDataManager.getInstance(project).getBlazeProjectData();
 
-      Optional<String> testClass =
+      Optional<String> testClassFromSources =
           determineTestClassFromSources(psiManager, blazeProjectData, label, targetJavaInfo);
-      if (testClass.isPresent()) { // In Java9, we could chain these with Optional.or()
-        return testClass.get();
+      if (testClassFromSources.isPresent()) { // In Java9, we could chain these with Optional.or()
+        return testClassFromSources.get();
       }
-
-      return determineTestClassFromPackage(psiManager, blazeProjectData, label)
-          .orElseThrow(() -> new ExecutionException("Couldn't determine test class."));
+      final Optional<String> testClassFromPackage = determineTestClassFromPackage(psiManager, blazeProjectData, label);
+      if (testClassFromPackage.isPresent()) { // In Java9, we could chain these with Optional.or()
+        return testClassFromPackage.get();
+      }
+      if (testFilter != null && !testFilter.trim().isEmpty()) {
+        return getTestClassFromTestFilter(testFilter);
+      }
+      throw new ExecutionException("Couldn't determine test class.");
     }
+  }
+
+  private String getTestClassFromTestFilter(String testFilter) {
+    return testFilter.substring(0, testFilter.indexOf('#'));
   }
 
   // This is the first part of Bazel's JavaCommon.determinePrimaryClass()
