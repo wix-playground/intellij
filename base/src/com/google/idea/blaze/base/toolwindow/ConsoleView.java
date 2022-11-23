@@ -77,10 +77,10 @@ final class ConsoleView implements Disposable {
   private static long consoleIdCounter;
 
   private static final Class<?>[] IGNORED_CONSOLE_ACTION_TYPES = {
-    PreviousOccurenceToolbarAction.class, // common_typos_disable
-    NextOccurenceToolbarAction.class,
-    ClearConsoleAction.class,
-    PrintAction.class
+      PreviousOccurenceToolbarAction.class, // common_typos_disable
+      NextOccurenceToolbarAction.class,
+      ClearConsoleAction.class,
+      PrintAction.class
   };
 
   private final Project project;
