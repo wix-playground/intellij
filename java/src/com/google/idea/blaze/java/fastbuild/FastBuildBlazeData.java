@@ -59,6 +59,8 @@ public abstract class FastBuildBlazeData {
 
   public abstract Optional<JavaToolchainInfo> javaToolchainInfo();
 
+  public abstract Optional<ProtoInfo> protoInfo();
+
   public static Builder builder() {
     return new AutoValue_FastBuildBlazeData.Builder()
         .setDependencies(ImmutableList.of())
@@ -82,6 +84,8 @@ public abstract class FastBuildBlazeData {
 
     public abstract Builder setJavaToolchainInfo(JavaToolchainInfo javaToolchainInfo);
 
+    public abstract Builder setProtoInfo(ProtoInfo protoInfo);
+
     public abstract FastBuildBlazeData build();
   }
 
@@ -102,6 +106,9 @@ public abstract class FastBuildBlazeData {
     }
     if (proto.hasJavaToolchainInfo()) {
       builder.setJavaToolchainInfo(JavaToolchainInfo.fromProto(proto.getJavaToolchainInfo()));
+    }
+    if (proto.hasProtoInfo()) {
+      builder.setProtoInfo(ProtoInfo.fromProto(proto.getProtoInfo()));
     }
     return builder.build();
   }
@@ -215,7 +222,7 @@ public abstract class FastBuildBlazeData {
 
   /** Data about a java_toolchain rule. */
   @AutoValue
-  abstract static class JavaToolchainInfo {
+  public abstract static class JavaToolchainInfo {
     public abstract ImmutableList<ArtifactLocation> javacJars();
 
     public abstract ImmutableList<ArtifactLocation> bootClasspathJars();
@@ -224,13 +231,16 @@ public abstract class FastBuildBlazeData {
 
     public abstract String targetVersion();
 
+    public abstract Optional<JavaRuntime> javaRuntime();
+
     static JavaToolchainInfo create(
         ImmutableList<ArtifactLocation> javacJars,
         ImmutableList<ArtifactLocation> bootJars,
         String sourceVersion,
-        String targetVersion) {
+        String targetVersion,
+        JavaRuntime javaRuntime) {
       return new AutoValue_FastBuildBlazeData_JavaToolchainInfo(
-          javacJars, bootJars, sourceVersion, targetVersion);
+          javacJars, bootJars, sourceVersion, targetVersion, Optional.ofNullable(javaRuntime));
     }
 
     static JavaToolchainInfo fromProto(FastBuildInfo.JavaToolchainInfo javaToolchainInfo) {
@@ -242,11 +252,49 @@ public abstract class FastBuildBlazeData {
           javaToolchainInfo.getBootclasspathJarsList().stream()
               .map(ArtifactLocation::fromProto)
               .collect(toImmutableList());
+      JavaRuntime javaRuntime = null;
+      if (javaToolchainInfo.hasJavaRuntime()) {
+        javaRuntime = JavaRuntime.fromProto(javaToolchainInfo.getJavaRuntime());
+      }
+
       return create(
           javacJars,
           bootJars,
           javaToolchainInfo.getSourceVersion(),
-          javaToolchainInfo.getTargetVersion());
+          javaToolchainInfo.getTargetVersion(), javaRuntime);
+    }
+  }
+  /** Data about a java_runtime rule. */
+  @AutoValue
+  public abstract static class JavaRuntime {
+    public abstract String javaExecutableExecPath();
+
+    static JavaRuntime create(
+        String javaExecutableExecPath) {
+      return new AutoValue_FastBuildBlazeData_JavaRuntime(javaExecutableExecPath);
+    }
+
+    static JavaRuntime fromProto(FastBuildInfo.JavaRuntimeInfo javaRuntime) {
+      return create(javaRuntime.getJavaExecutableExecPath());
+    }
+  }
+
+  /**
+   * Data about a proto_library rule.
+   */
+  @AutoValue
+  public abstract static class ProtoInfo {
+
+    public abstract Set<ArtifactLocation> sources();
+
+    static ProtoInfo create(Set<ArtifactLocation> sources) {
+      return new AutoValue_FastBuildBlazeData_ProtoInfo(sources);
+    }
+
+    static ProtoInfo fromProto(FastBuildInfo.ProtoInfo proto) {
+      Set<ArtifactLocation> sources =
+          proto.getSourcesList().stream().map(ArtifactLocation::fromProto).collect(toSet());
+      return create(sources);
     }
   }
 }
