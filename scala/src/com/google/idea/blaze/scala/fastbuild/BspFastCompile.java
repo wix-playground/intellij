@@ -29,7 +29,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.jetbrains.bsp.protocol.BspCommunication;
+import org.jetbrains.bsp.protocol.BspJob;
 import org.jetbrains.bsp.protocol.BspNotifications.BspNotification;
 import org.jetbrains.bsp.protocol.BspNotifications.PublishDiagnostics;
 import org.jetbrains.bsp.protocol.BspNotifications.TaskFinish;
@@ -39,7 +41,9 @@ import org.jetbrains.plugins.scala.build.BuildReporter;
 import org.jetbrains.plugins.scala.build.ConsoleReporter;
 import scala.Function1;
 import scala.Function2;
+import scala.Option;
 import scala.runtime.BoxedUnit;
+import scala.util.Try;
 
 public class BspFastCompile {
 
@@ -64,19 +68,31 @@ public class BspFastCompile {
 
   }
 
-  void compileWithBsp() throws IOException, InterruptedException {
+  void compileWithBsp() throws IOException, InterruptedException, TimeoutException {
     final BspCommunication bspCommunication =
         BspCommunication.forWorkspace(bloopProject.getWorkspaceDir().toFile(),
             BloopConfig$.MODULE$);
     // for some reason the BspJop<CompileResult> doesn't return the actual data
     // so we're using a queue to communicate back the results
-    bspCommunication.run(bspCompileRunner, bspNotificationsHandler, BspFastCompile::log, reporter);
+    final BspJob<CompileResult> compileResultBspJob = bspCommunication.run(bspCompileRunner,
+        bspNotificationsHandler, BspFastCompile::log, reporter);
 
-    TaskFinishParams taskFinishParams = finishParams.poll(3, TimeUnit.MINUTES);
-    if (taskFinishParams.getStatus() == StatusCode.OK) {
+    TaskFinishParams taskFinishParams = finishParams.poll(1, TimeUnit.MINUTES);
+    if (taskFinishParams != null && taskFinishParams.getStatus() == StatusCode.OK) {
       copyCompilationOutputs(taskFinishParams);
     } else {
-      throw new RuntimeException("Bsp fast scala compilation");
+      if (compileResultBspJob.future().isCompleted()) {
+        final Option<Try<CompileResult>> maybeCompileResultOrErrorOrNone = compileResultBspJob.future().value();
+        if (maybeCompileResultOrErrorOrNone.isDefined() && maybeCompileResultOrErrorOrNone.get().isFailure()) {
+          final Throwable throwable = maybeCompileResultOrErrorOrNone.get().failed().get();
+          throw new RuntimeException(throwable);
+        } else {
+          throw new RuntimeException("Bsp fast scala compilation finished without a clear error and without a value");
+        }
+      }
+      else {
+        throw new TimeoutException("Bsp fast scala compilation timed out");
+      }
     }
 
   }
