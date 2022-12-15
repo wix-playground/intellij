@@ -315,7 +315,7 @@ final class FastBuildChangedFilesService implements Disposable {
   private ImmutableSet<File> getSourceFilesRecursively(
       Label label, Map<Label, FastBuildBlazeData> blazeData) {
     FastBuildBlazeData data = blazeData.get(label);
-    if (data == null || (!data.javaInfo().isPresent() && !data.protoInfo().isPresent())) {
+    if (data == null || !data.javaInfo().isPresent()) {
       return ImmutableSet.of();
     }
     Set<File> sourceFiles = new HashSet<>();
