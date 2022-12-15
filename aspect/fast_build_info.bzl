@@ -101,6 +101,13 @@ def _fast_build_info_impl(target, ctx):
         )
         info["android_info"] = android_info
 
+    if ProtoInfo in target:
+        write_output = True
+        proto_info = {
+            "sources": sources_from_target(ctx),
+        }
+        info["proto_info"] = struct_omit_none(**proto_info)
+
     if write_output:
         output_file = ctx.actions.declare_file(target.label.name + ".ide-fast-build-info.txt")
         ctx.actions.write(output_file, struct_omit_none(**info).to_proto())
