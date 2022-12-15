@@ -59,6 +59,8 @@ public abstract class FastBuildBlazeData {
 
   public abstract Optional<JavaToolchainInfo> javaToolchainInfo();
 
+  public abstract Optional<ProtoInfo> protoInfo();
+
   public static Builder builder() {
     return new AutoValue_FastBuildBlazeData.Builder()
         .setDependencies(ImmutableList.of())
