@@ -38,9 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 
-/**
- * Data gathered from Blaze about a single target in a fast build's dependency tree.
- */
+/** Data gathered from Blaze about a single target in a fast build's dependency tree. */
 @AutoValue
 public abstract class FastBuildBlazeData {
 
@@ -61,20 +59,15 @@ public abstract class FastBuildBlazeData {
 
   public abstract Optional<JavaToolchainInfo> javaToolchainInfo();
 
-  public abstract Optional<ProtoInfo> protoInfo();
-
   public static Builder builder() {
     return new AutoValue_FastBuildBlazeData.Builder()
         .setDependencies(ImmutableList.of())
         .setData(ImmutableMap.of());
   }
 
-  /**
-   * A builder for {@link FastBuildBlazeData} objects.
-   */
+  /** A builder for {@link FastBuildBlazeData} objects. */
   @AutoValue.Builder
   public abstract static class Builder {
-
     public abstract Builder setLabel(Label label);
 
     public abstract Builder setWorkspaceName(String workspaceName);
@@ -130,12 +123,9 @@ public abstract class FastBuildBlazeData {
                         .collect(toImmutableSet())));
   }
 
-  /**
-   * Data about an Android rule (android_library, android_roboelectric_test, etc.)
-   */
+  /** Data about an Android rule (android_library, android_roboelectric_test, etc.) */
   @AutoValue
   public abstract static class AndroidInfo {
-
     public abstract Optional<ArtifactLocation> aar();
 
     public abstract Optional<ArtifactLocation> mergedManifest();
@@ -154,12 +144,9 @@ public abstract class FastBuildBlazeData {
     }
   }
 
-  /**
-   * Data about a Java rule (java_library, java_test, etc.)
-   */
+  /** Data about a Java rule (java_library, java_test, etc.) */
   @AutoValue
   public abstract static class JavaInfo {
-
     public abstract ImmutableSet<ArtifactLocation> sources();
 
     public abstract Optional<String> testClass();
@@ -205,9 +192,7 @@ public abstract class FastBuildBlazeData {
           .setJvmFlags(ImmutableList.of());
     }
 
-    /**
-     * A builder for {@link JavaInfo} objects.
-     */
+    /** A builder for {@link JavaInfo} objects. */
     @AutoValue.Builder
     public abstract static class Builder {
 
@@ -233,12 +218,9 @@ public abstract class FastBuildBlazeData {
     }
   }
 
-  /**
-   * Data about a java_toolchain rule.
-   */
+  /** Data about a java_toolchain rule. */
   @AutoValue
   public abstract static class JavaToolchainInfo {
-
     public abstract ImmutableList<ArtifactLocation> javacJars();
 
     public abstract ImmutableList<ArtifactLocation> bootClasspathJars();
@@ -283,7 +265,6 @@ public abstract class FastBuildBlazeData {
   /** Data about a java_runtime rule. */
   @AutoValue
   public abstract static class JavaRuntime {
-
     public abstract String javaExecutableExecPath();
 
     static JavaRuntime create(
