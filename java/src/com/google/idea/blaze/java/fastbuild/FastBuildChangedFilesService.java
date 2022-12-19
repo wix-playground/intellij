@@ -281,8 +281,7 @@ final class FastBuildChangedFilesService implements Disposable {
     private class LogErrorCallback implements FutureCallback<Void> {
 
       @Override
-      public void onSuccess(Void result) {
-      }
+      public void onSuccess(Void result) {}
 
       @Override
       public void onFailure(Throwable t) {
@@ -341,7 +340,7 @@ final class FastBuildChangedFilesService implements Disposable {
   private enum State {
     WAITING_FOR_SOURCES,
     COLLECTING,
-    TOO_MANY_CHANGES,
+    TOO_MANY_CHANGES
   }
 
   private static class Data {
