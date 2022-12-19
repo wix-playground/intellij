@@ -378,29 +378,29 @@ public class FastBuildChangedFilesServiceTest extends BlazeIntegrationTestCase {
     return ArtifactLocation.newBuilder().setRelativePath(relativePath).setIsSource(true).build();
   }
 
-  private static FastBuildBlazeData.Builder protoSources(String... artifacts) {
-    Set<ArtifactLocation> sourceArtifacts =
-        Arrays.stream(artifacts)
-            .map(FastBuildChangedFilesServiceTest::protoSourceArtifact)
-            .collect(toSet());
-    return FastBuildBlazeData.builder()
-        .setLabel(Label.create("//ignore:ignore"))
-        .setWorkspaceName("io_bazel")
-        .setProtoInfo(ProtoInfo.fromProto(
-            FastBuildInfo.ProtoInfo.newBuilder().addAllSources(sourceArtifacts).build()));
-  }
-
   private static FastBuildBlazeData.Builder sources(String... artifacts) {
-    Set<ArtifactLocation> sourceArtifacts =
-        Arrays.stream(artifacts)
-            .map(FastBuildChangedFilesServiceTest::protoSourceArtifact)
-            .collect(toSet());
     return FastBuildBlazeData.builder()
         .setLabel(Label.create("//ignore:ignore"))
         .setWorkspaceName("io_bazel")
         .setJavaInfo(
             JavaInfo.fromProto(
-                FastBuildInfo.JavaInfo.newBuilder().addAllSources(sourceArtifacts).build()));
+                FastBuildInfo.JavaInfo.newBuilder().addAllSources(sourceArtifacts(artifacts))
+                    .build()));
+  }
+
+  private static FastBuildBlazeData.Builder protoSources(String... artifacts) {
+    return FastBuildBlazeData.builder()
+        .setLabel(Label.create("//ignore:ignore"))
+        .setWorkspaceName("io_bazel")
+        .setProtoInfo(ProtoInfo.fromProto(
+            FastBuildInfo.ProtoInfo.newBuilder().addAllSources(sourceArtifacts(artifacts))
+                .build()));
+  }
+
+  private static Set<ArtifactLocation> sourceArtifacts(String... artifacts) {
+    return Arrays.stream(artifacts)
+        .map(FastBuildChangedFilesServiceTest::protoSourceArtifact)
+        .collect(toSet());
   }
 
   private static ImmutableList<Label> deps(String... deps) {
