@@ -372,7 +372,7 @@ final class FastBuildChangedFilesService implements Disposable {
     void updateChangedSources(Set<File> changedCompilableFiles,
         Set<File> changedNonCompilableFiles) {
 
-      if (state.equals(State.TOO_MANY_CHANGES)) {
+      if (state.equals(State.TOO_MANY_CHANGES) || !changedNonCompilableFiles.isEmpty()) {
         return;
       }
 
