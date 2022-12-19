@@ -74,8 +74,7 @@ final class FastBuildChangedFilesService implements Disposable {
 
   private static final Logger logger = Logger.getInstance(FastBuildChangedFilesService.class);
 
-  @VisibleForTesting
-  static final int MAX_FILES_TO_COLLECT = 30;
+  @VisibleForTesting static final int MAX_FILES_TO_COLLECT = 30;
 
   private final Project project;
   private final BlazeProjectDataManager projectDataManager;
@@ -157,21 +156,15 @@ final class FastBuildChangedFilesService implements Disposable {
 
     switch (data.state) {
       case WAITING_FOR_SOURCES:
+      case COLLECTING:
         if (!data.changedNonCompilableSources.isEmpty()) {
           return ChangedSources.fullCompile();
-        } else {
-          ChangedSources result = ChangedSources.withChangedSources(data.changedSources);
-          data.changedSources = new HashSet<>();
-          data.changedNonCompilableSources = new HashSet<>();
-          return result;
         }
-      case COLLECTING:
         ChangedSources result = ChangedSources.withChangedSources(data.changedSources);
         data.changedSources = new HashSet<>();
         data.changedNonCompilableSources = new HashSet<>();
         return result;
       case TOO_MANY_CHANGES:
-      case NON_COMPILABLE_CHANGES:
         // Don't reset anything in data; it'll get reset when a new build starts and newBuild() is
         // called.
         return ChangedSources.fullCompile();
@@ -188,7 +181,7 @@ final class FastBuildChangedFilesService implements Disposable {
     // TODO(b/145386688): Access should be guarded by enclosing instance
     // 'com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService' of 'data', which is not
     // accessible in this scope; instead found: 'this'
-    data.updateChangedSources(files);
+    data.updateChangedSources(files, ImmutableSet.of());
   }
 
   private synchronized void subscribe() {
@@ -265,14 +258,10 @@ final class FastBuildChangedFilesService implements Disposable {
                   // 'com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService' of 'data',
                   // which is not accessible in this scope
 
-                  if (!changedProtoFiles.isEmpty()) {
+                  if (!changedCompilableFiles.isEmpty() || !changedProtoFiles.isEmpty()) {
                     labelData.values()
-                        .forEach(data -> data.checkForNonCompilableChanges(changedProtoFiles));
-                  }
-
-                  if (!changedCompilableFiles.isEmpty()) {
-                    labelData.values()
-                        .forEach(data -> data.updateChangedSources(changedCompilableFiles));
+                        .forEach(data -> data.updateChangedSources(changedCompilableFiles,
+                            changedProtoFiles));
                   }
 
                   return null;
@@ -353,7 +342,6 @@ final class FastBuildChangedFilesService implements Disposable {
     WAITING_FOR_SOURCES,
     COLLECTING,
     TOO_MANY_CHANGES,
-    NON_COMPILABLE_CHANGES,
   }
 
   private static class Data {
@@ -373,42 +361,32 @@ final class FastBuildChangedFilesService implements Disposable {
       checkState(state.equals(State.WAITING_FOR_SOURCES));
       state = State.COLLECTING;
       this.sources = sources;
-      ImmutableSet<File> allModifiedFiles = ImmutableSet.copyOf(changedSources);
+      ImmutableSet<File> allCompilableModifiedFiles = ImmutableSet.copyOf(changedSources);
       ImmutableSet<File> allNonCompilableModifiedFiles = ImmutableSet.copyOf(
           changedNonCompilableSources);
       changedSources.clear();
       changedNonCompilableSources.clear();
-      updateChangedSources(allModifiedFiles);
-      checkForNonCompilableChanges(allNonCompilableModifiedFiles);
+      updateChangedSources(allCompilableModifiedFiles, allNonCompilableModifiedFiles);
     }
 
     @GuardedBy("FastBuildChangedFilesService.this")
-    void updateChangedSources(Set<File> changedFiles) {
+    void updateChangedSources(Set<File> changedCompilableFiles,
+        Set<File> changedNonCompilableFiles) {
 
-      if (state.equals(State.TOO_MANY_CHANGES) || state.equals(State.NON_COMPILABLE_CHANGES)) {
+      if (state.equals(State.TOO_MANY_CHANGES)) {
         return;
       }
 
       if (state.equals(State.WAITING_FOR_SOURCES)) {
-        changedSources.addAll(changedFiles);
+        changedSources.addAll(changedCompilableFiles);
+        changedNonCompilableSources.addAll(changedNonCompilableFiles);
       } else if (state.equals(State.COLLECTING)) {
-        changedSources.addAll(intersection(changedFiles, sources));
+        changedSources.addAll(intersection(changedCompilableFiles, sources));
+        changedNonCompilableSources.addAll(intersection(changedNonCompilableFiles, sources));
       }
       if (changedSources.size() > MAX_FILES_TO_COLLECT) {
         changedSources = ImmutableSet.of();
         state = State.TOO_MANY_CHANGES;
-      }
-    }
-
-    void checkForNonCompilableChanges(Set<File> changedNonCompileFiles) {
-      if (state.equals(State.WAITING_FOR_SOURCES)) {
-        changedNonCompilableSources.addAll(changedNonCompileFiles);
-        return;
-      }
-
-      if (!intersection(changedNonCompileFiles, sources).isEmpty()) {
-        changedNonCompilableSources = ImmutableSet.of();
-        state = State.NON_COMPILABLE_CHANGES;
       }
     }
   }
