@@ -365,6 +365,7 @@ final class FastBuildChangedFilesService implements Disposable {
           changedNonCompilableSources);
       changedSources.clear();
       changedNonCompilableSources.clear();
+      // Any files modified, before the sources were set, get checked against the sources once they're set
       updateChangedSources(allCompilableModifiedFiles, allNonCompilableModifiedFiles);
     }
 
@@ -372,6 +373,7 @@ final class FastBuildChangedFilesService implements Disposable {
     void updateChangedSources(Set<File> changedCompilableFiles,
         Set<File> changedNonCompilableFiles) {
 
+      // If a single non-compilable file is detected, a full compile is needed, no need to check files further
       if (state.equals(State.TOO_MANY_CHANGES) || !changedNonCompilableSources.isEmpty()) {
         return;
       }
