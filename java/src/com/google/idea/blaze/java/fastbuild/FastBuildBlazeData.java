@@ -59,6 +59,8 @@ public abstract class FastBuildBlazeData {
 
   public abstract Optional<JavaToolchainInfo> javaToolchainInfo();
 
+  public abstract Optional<ProtoInfo> protoInfo();
+
   public static Builder builder() {
     return new AutoValue_FastBuildBlazeData.Builder()
         .setDependencies(ImmutableList.of())
@@ -82,6 +84,8 @@ public abstract class FastBuildBlazeData {
 
     public abstract Builder setJavaToolchainInfo(JavaToolchainInfo javaToolchainInfo);
 
+    public abstract Builder setProtoInfo(ProtoInfo protoInfo);
+
     public abstract FastBuildBlazeData build();
   }
 
@@ -102,6 +106,9 @@ public abstract class FastBuildBlazeData {
     }
     if (proto.hasJavaToolchainInfo()) {
       builder.setJavaToolchainInfo(JavaToolchainInfo.fromProto(proto.getJavaToolchainInfo()));
+    }
+    if (proto.hasProtoInfo()) {
+      builder.setProtoInfo(ProtoInfo.fromProto(proto.getProtoInfo()));
     }
     return builder.build();
   }
@@ -269,6 +276,25 @@ public abstract class FastBuildBlazeData {
 
     static JavaRuntime fromProto(FastBuildInfo.JavaRuntimeInfo javaRuntime) {
       return create(javaRuntime.getJavaExecutableExecPath());
+    }
+  }
+
+  /**
+   * Data about a proto_library rule.
+   */
+  @AutoValue
+  public abstract static class ProtoInfo {
+
+    public abstract Set<ArtifactLocation> sources();
+
+    static ProtoInfo create(Set<ArtifactLocation> sources) {
+      return new AutoValue_FastBuildBlazeData_ProtoInfo(sources);
+    }
+
+    static ProtoInfo fromProto(FastBuildInfo.ProtoInfo proto) {
+      Set<ArtifactLocation> sources =
+          proto.getSourcesList().stream().map(ArtifactLocation::fromProto).collect(toSet());
+      return create(sources);
     }
   }
 }
