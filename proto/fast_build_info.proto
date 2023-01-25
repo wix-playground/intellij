@@ -30,6 +30,7 @@ message FastBuildBlazeData {
   JavaInfo java_info = 6;
   JavaToolchainInfo java_toolchain_info = 7;
   ProtoInfo proto_info = 8;
+  string build_file_path = 9;
 }
 
 message Data {

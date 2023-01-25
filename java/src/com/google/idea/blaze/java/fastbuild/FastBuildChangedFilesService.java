@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.idea.blaze.base.model.primitives.Label;
+import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.sync.data.BlazeProjectDataManager;
 import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
 import com.google.idea.blaze.java.fastbuild.FastBuildState.BuildOutput;
@@ -248,9 +249,9 @@ final class FastBuildChangedFilesService implements Disposable {
                           .map(File::new)
                           .collect(toImmutableSet());
 
-                  ImmutableSet<File> changedProtoFiles =
+                  ImmutableSet<File> changedNonCompilableFiles =
                       changedFilePaths.stream()
-                          .filter(f -> f.endsWith(".proto"))
+                          .filter(f -> f.endsWith(".proto") || f.endsWith(".bazel"))
                           .map(File::new)
                           .collect(toImmutableSet());
 
@@ -258,10 +259,10 @@ final class FastBuildChangedFilesService implements Disposable {
                   // 'com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService' of 'data',
                   // which is not accessible in this scope
 
-                  if (!changedCompilableFiles.isEmpty() || !changedProtoFiles.isEmpty()) {
+                  if (!changedCompilableFiles.isEmpty() || !changedNonCompilableFiles.isEmpty()) {
                     labelData.values()
                         .forEach(data -> data.updateChangedSources(changedCompilableFiles,
-                            changedProtoFiles));
+                            changedNonCompilableFiles));
                   }
 
                   return null;
@@ -309,6 +310,9 @@ final class FastBuildChangedFilesService implements Disposable {
     Set<File> sourceFiles = new HashSet<>();
     ArtifactLocationDecoder decoder =
         projectDataManager.getBlazeProjectData().getArtifactLocationDecoder();
+
+    String workSpaceRootPath = WorkspaceRoot.fromProject(project).directory().getAbsolutePath();
+
     SuccessorsFunction<FastBuildBlazeData> graph = l -> getDependencies(blazeData, l);
     Traverser.forGraph(graph)
         .breadthFirst(data)
@@ -319,13 +323,22 @@ final class FastBuildChangedFilesService implements Disposable {
                     .map(decoder::decode)
                     .filter(f -> f.getName().endsWith(".java") || f.getName().endsWith(".scala"))
                     .forEach(sourceFiles::add);
+                addBuildFile(sourceFiles, workSpaceRootPath, d.buildFilePath());
               } else if (d.protoInfo().isPresent()) {
                 d.protoInfo().get().sources().stream()
                     .map(decoder::decode)
                     .forEach(sourceFiles::add);
+                addBuildFile(sourceFiles, workSpaceRootPath, d.buildFilePath());
               }
             });
     return ImmutableSet.copyOf(sourceFiles);
+  }
+
+  private static void addBuildFile(Set<File> sourceFiles ,String workSpaceRootPath, String buildFilePath) {
+    File buildFile = new File(workSpaceRootPath, buildFilePath);
+    if (buildFile.exists()) {
+      sourceFiles.add(buildFile);
+    }
   }
 
   private static ImmutableSet<FastBuildBlazeData> getDependencies(
