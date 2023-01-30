@@ -334,7 +334,8 @@ final class FastBuildChangedFilesService implements Disposable {
     return ImmutableSet.copyOf(sourceFiles);
   }
 
-  private static void addBuildFile(Set<File> sourceFiles ,String workSpaceRootPath, String buildFilePath) {
+  private static void addBuildFile(Set<File> sourceFiles, String workSpaceRootPath,
+      String buildFilePath) {
     File buildFile = new File(workSpaceRootPath, buildFilePath);
     if (buildFile.exists()) {
       sourceFiles.add(buildFile);
