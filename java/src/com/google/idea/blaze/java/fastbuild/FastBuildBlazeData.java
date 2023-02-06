@@ -61,6 +61,8 @@ public abstract class FastBuildBlazeData {
 
   public abstract Optional<ProtoInfo> protoInfo();
 
+  public abstract String buildFilePath();
+
   public static Builder builder() {
     return new AutoValue_FastBuildBlazeData.Builder()
         .setDependencies(ImmutableList.of())
@@ -87,6 +89,8 @@ public abstract class FastBuildBlazeData {
     public abstract Builder setProtoInfo(ProtoInfo protoInfo);
 
     public abstract FastBuildBlazeData build();
+
+    public abstract Builder setBuildFilePath(String label);
   }
 
   static FastBuildBlazeData fromProto(FastBuildInfo.FastBuildBlazeData proto) {
@@ -97,7 +101,8 @@ public abstract class FastBuildBlazeData {
             .setWorkspaceName(proto.getWorkspaceName())
             .setDependencies(
                 proto.getDependenciesList().stream().map(Label::fromProto).collect(toSet()))
-            .setData(convertDataToMap(proto.getDataList()));
+            .setData(convertDataToMap(proto.getDataList()))
+            .setBuildFilePath(proto.getBuildFilePath());
     if (proto.hasAndroidInfo()) {
       builder.setAndroidInfo(AndroidInfo.fromProto(proto.getAndroidInfo()));
     }

@@ -23,6 +23,7 @@ def _fast_build_info_impl(target, ctx):
         "workspace_name": ctx.workspace_name,
         "label": stringify_label(target.label),
         "dependencies": [stringify_label(t.label) for t in dep_targets],
+        "build_file_path": ctx.build_file_path,
     }
 
     write_output = False
