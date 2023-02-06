@@ -25,6 +25,7 @@ import com.google.idea.blaze.base.command.BlazeCommand;
 import com.google.idea.blaze.base.command.BlazeCommandName;
 import com.google.idea.blaze.base.command.buildresult.BuildResultHelper;
 import com.google.idea.blaze.base.scope.BlazeContext;
+import com.google.idea.blaze.base.settings.Blaze;
 import com.google.idea.blaze.base.settings.BuildSystemName;
 import com.intellij.openapi.project.Project;
 import java.io.InputStream;
@@ -39,10 +40,10 @@ class BlazeInfoRunnerImpl extends BlazeInfoRunner {
       BlazeContext context,
       List<String> blazeFlags,
       String key) {
+    String binaryPath = Blaze.getBuildSystemProvider(project).getBinaryPath(project);
     boolean isExecutable = ExternalTask.builder().args("which", binaryPath).build().run() == 0;
     if (!isExecutable) {
       BazelBinaryNotFoundNotification.show(binaryPath);
-      throw new BlazeInfoException(-1, binaryPath + " cannot be executed");
     }
     return BlazeExecutor.getInstance()
         .submit(
