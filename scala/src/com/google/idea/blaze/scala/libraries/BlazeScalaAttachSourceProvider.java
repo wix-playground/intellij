@@ -13,7 +13,6 @@ import com.google.idea.blaze.java.sync.model.BlazeJarLibrary;
 import com.google.idea.blaze.scala.sync.model.BlazeScalaSyncData;
 import com.google.idea.common.experiments.BoolExperiment;
 import com.google.idea.common.util.Transactions;
-import com.google.idea.sdkcompat.general.BaseSdkCompat;
 import com.google.idea.sdkcompat.java.AttachSourcesProviderAdapter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.TransactionGuard;
@@ -28,6 +27,7 @@ import com.intellij.psi.PsiManager;
 import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nullable;
+import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProviderImpl;
 
 public class BlazeScalaAttachSourceProvider extends AttachSourcesProviderAdapter {
 
@@ -141,8 +141,7 @@ public class BlazeScalaAttachSourceProvider extends AttachSourcesProviderAdapter
     ApplicationManager.getApplication()
         .runWriteAction(
             () -> {
-              IdeModifiableModelsProvider modelsProvider =
-                  BaseSdkCompat.createModifiableModelsProvider(project);
+              IdeModifiableModelsProvider modelsProvider = new IdeModifiableModelsProviderImpl(project);
               for (BlazeLibrary blazeLibrary : librariesToAttachSourceTo) {
                 // Make sure we don't do it twice
                 if (AttachedSourceJarManager.getInstance(project)
