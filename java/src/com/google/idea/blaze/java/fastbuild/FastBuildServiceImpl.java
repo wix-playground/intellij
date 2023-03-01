@@ -206,7 +206,7 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
     } else {
       existingBuildState = existingBuildState.withCompletedBuildOutput(completedBuildOutput);
       return performIncrementalCompilation(
-          context, label, existingBuildState, changedSources.changedSources());
+          context, label, existingBuildState, changedSources.changedSources(), changedSources.createdSources());
     }
   }
 
@@ -367,10 +367,10 @@ final class FastBuildServiceImpl implements FastBuildService, ProjectComponent {
       BlazeContext context,
       Label label,
       FastBuildState existingBuildState,
-      Set<File> modifiedFiles) {
+      Set<File> modifiedFiles, Set<File> createdFiles) {
 
     ListenableFuture<BuildOutput> compilationResult =
-        incrementalCompiler.compile(context, label, existingBuildState, modifiedFiles);
+        incrementalCompiler.compile(context, label, existingBuildState, modifiedFiles, createdFiles);
     Futures.addCallback(
         compilationResult,
         new FutureCallback<BuildOutput>() {

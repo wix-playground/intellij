@@ -53,7 +53,7 @@ final class FastBuildIncrementalCompilerImpl implements FastBuildIncrementalComp
 
   @Override
   public ListenableFuture<BuildOutput> compile(
-      BlazeContext context, Label label, FastBuildState buildState, Set<File> modifiedFiles) {
+      BlazeContext context, Label label, FastBuildState buildState, Set<File> modifiedFiles,Set<File> createdFiles ) {
     checkState(buildState.completedBuildOutput().isPresent());
     BuildOutput buildOutput = buildState.completedBuildOutput().get();
     checkState(buildOutput.blazeData().containsKey(label));
@@ -62,7 +62,7 @@ final class FastBuildIncrementalCompilerImpl implements FastBuildIncrementalComp
         .submit(
             () -> {
               ChangedSourceInfo changedSourceInfo =
-                  getPathsToCompile(context, label, buildOutput.blazeData(), modifiedFiles);
+                  getPathsToCompile(context, label, buildOutput.blazeData(), modifiedFiles, createdFiles);
 
               if (!changedSourceInfo.pathsToCompile.isEmpty()) {
                 CompileInstructions instructions =
@@ -95,12 +95,13 @@ final class FastBuildIncrementalCompilerImpl implements FastBuildIncrementalComp
       BlazeContext context,
       Label label,
       Map<Label, FastBuildBlazeData> blazeData,
-      Set<File> modifiedSinceBuild) {
+      Set<File> modifiedSinceBuild,
+      Set<File> createdSinceBuild) {
 
     Stopwatch timer = Stopwatch.createStarted();
 
     BlazeProjectData projectData = projectDataManager.getBlazeProjectData();
-    Set<File> sourceFiles = new HashSet<>();
+    Set<File> sourceFiles = new HashSet<>(createdSinceBuild);
     Set<String> annotationProcessorClassNames = new HashSet<>();
     // Use ImmutableSet.Builder because it will preserve the classpath order.
     ImmutableSet.Builder<File> annotationProcessorsClasspath = ImmutableSet.builder();

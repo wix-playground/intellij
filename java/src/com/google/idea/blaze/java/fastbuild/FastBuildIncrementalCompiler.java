@@ -39,5 +39,5 @@ interface FastBuildIncrementalCompiler {
    * {@code buildState} must be present.
    */
   ListenableFuture<BuildOutput> compile(
-      BlazeContext context, Label label, FastBuildState buildState, Set<File> modifiedFiles);
+      BlazeContext context, Label label, FastBuildState buildState, Set<File> modifiedFiles, Set<File> createdFiles);
 }

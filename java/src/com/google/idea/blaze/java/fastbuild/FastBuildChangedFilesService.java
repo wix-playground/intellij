@@ -23,6 +23,7 @@ import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.SuccessorsFunction;
 import com.google.common.graph.Traverser;
@@ -31,8 +32,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.idea.blaze.base.model.primitives.Label;
+import com.google.idea.blaze.base.model.primitives.WorkspaceRoot;
 import com.google.idea.blaze.base.sync.data.BlazeProjectDataManager;
 import com.google.idea.blaze.base.sync.workspace.ArtifactLocationDecoder;
+import com.google.idea.blaze.base.targetmaps.SourceToTargetMap;
 import com.google.idea.blaze.java.fastbuild.FastBuildState.BuildOutput;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
@@ -40,6 +43,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent;
+import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.serviceContainer.NonInjectable;
@@ -52,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 
 /**
@@ -139,13 +145,15 @@ final class FastBuildChangedFilesService implements Disposable {
 
     abstract ImmutableSet<File> changedSources();
 
+    abstract ImmutableSet<File> createdSources();
+
     static ChangedSources fullCompile() {
-      return new AutoValue_FastBuildChangedFilesService_ChangedSources(true, ImmutableSet.of());
+      return new AutoValue_FastBuildChangedFilesService_ChangedSources(true, ImmutableSet.of(), ImmutableSet.of());
     }
 
-    private static ChangedSources withChangedSources(Set<File> changedSources) {
+    private static ChangedSources withChangedSources(Set<File> changedSources, Set<File> createdSources) {
       return new AutoValue_FastBuildChangedFilesService_ChangedSources(
-          false, ImmutableSet.copyOf(changedSources));
+          false, ImmutableSet.copyOf(changedSources), ImmutableSet.copyOf(createdSources));
     }
   }
 
@@ -160,7 +168,7 @@ final class FastBuildChangedFilesService implements Disposable {
         if (!data.changedNonCompilableSources.isEmpty()) {
           return ChangedSources.fullCompile();
         }
-        ChangedSources result = ChangedSources.withChangedSources(data.changedSources);
+        ChangedSources result = ChangedSources.withChangedSources(data.changedSources, data.createdSources);
         data.changedSources = new HashSet<>();
         data.changedNonCompilableSources = new HashSet<>();
         return result;
@@ -181,7 +189,7 @@ final class FastBuildChangedFilesService implements Disposable {
     // TODO(b/145386688): Access should be guarded by enclosing instance
     // 'com.google.idea.blaze.java.fastbuild.FastBuildChangedFilesService' of 'data', which is not
     // accessible in this scope; instead found: 'this'
-    data.updateChangedSources(files, ImmutableSet.of());
+    data.updateChangedSources(files, ImmutableSet.of(), Set.of());
   }
 
   private synchronized void subscribe() {
@@ -235,10 +243,17 @@ final class FastBuildChangedFilesService implements Disposable {
                     return null;
                   }
 
+                  HashSet<File> createdFiles = new HashSet<>();
+
                   ImmutableSet<String> changedFilePaths =
                       events.stream()
                           // We don't want to compile deleted files
                           .filter(event -> !(event instanceof VFileDeleteEvent))
+                          .peek(event -> {
+                            if(event instanceof VFileCreateEvent || event instanceof VFileCopyEvent){
+                              createdFiles.add(new File((event.getPath())));
+                            }
+                          })
                           .map(VFileEvent::getPath)
                           .collect(toImmutableSet());
 
@@ -261,7 +276,7 @@ final class FastBuildChangedFilesService implements Disposable {
                   if (!changedCompilableFiles.isEmpty() || !changedProtoFiles.isEmpty()) {
                     labelData.values()
                         .forEach(data -> data.updateChangedSources(changedCompilableFiles,
-                            changedProtoFiles));
+                            changedProtoFiles, createdFiles));
                   }
 
                   return null;
@@ -348,6 +363,7 @@ final class FastBuildChangedFilesService implements Disposable {
     // State only moves forward, never backward (WAITING_FOR_SOURCES->COLLECTING->TOO_MANY_CHANGES)
     State state = State.WAITING_FOR_SOURCES;
     Set<File> changedSources = new HashSet<>();
+    Set<File> createdSources = new HashSet<>();
     Set<File> changedNonCompilableSources = new HashSet<>();
     ImmutableSet<File> sources = null;
 
@@ -366,12 +382,13 @@ final class FastBuildChangedFilesService implements Disposable {
       changedSources.clear();
       changedNonCompilableSources.clear();
       // Any files modified, before the sources were set, get checked against the sources once they're set
-      updateChangedSources(allCompilableModifiedFiles, allNonCompilableModifiedFiles);
+      updateChangedSources(allCompilableModifiedFiles, allNonCompilableModifiedFiles, Set.of());
     }
 
     @GuardedBy("FastBuildChangedFilesService.this")
     void updateChangedSources(Set<File> changedCompilableFiles,
-        Set<File> changedNonCompilableFiles) {
+        Set<File> changedNonCompilableFiles,
+        Set<File> createdFiles) {
 
       // If a single non-compilable file is detected, a full compile is needed, no need to check files further
       if (state.equals(State.TOO_MANY_CHANGES) || !changedNonCompilableSources.isEmpty()) {
@@ -383,6 +400,7 @@ final class FastBuildChangedFilesService implements Disposable {
         changedNonCompilableSources.addAll(changedNonCompilableFiles);
       } else if (state.equals(State.COLLECTING)) {
         changedSources.addAll(intersection(changedCompilableFiles, sources));
+        createdSources.addAll(createdFiles);
         changedNonCompilableSources.addAll(intersection(changedNonCompilableFiles, sources));
       }
       if (changedSources.size() > MAX_FILES_TO_COLLECT) {
