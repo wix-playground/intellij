@@ -19,7 +19,16 @@ licenses(["notice"])
 
 java_library(
     name = "scala",
-    srcs = glob(["src/**/*.java"]),
+    srcs = select({
+        "//intellij_platform_sdk:intellij-2022.3": glob(
+            ["src/**/*.java"],
+            exclude = ["src/com/google/idea/blaze/scala/fastbuild/v23/BspFastCompile.java"],
+        ),
+        "//conditions:default": glob(
+            ["src/**/*.java"],
+            exclude = ["src/com/google/idea/blaze/scala/fastbuild/BspFastCompile.java"],
+        ),
+    }),
     deps = [
         "//base",
         "//common/experiments",
