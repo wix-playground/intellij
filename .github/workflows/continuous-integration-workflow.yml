@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ij_product: ['intellij-2022.3', 'intellij-2023.1']
+        ij_product: ['intellij-2022.3', 'intellij-2023.1', 'intellij-2023.2']
         experimental: [false]
     steps:
       - uses: actions/checkout@v2
