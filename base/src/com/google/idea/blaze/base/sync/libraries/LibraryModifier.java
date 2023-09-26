@@ -20,23 +20,16 @@ import com.google.idea.blaze.base.model.BlazeProjectData;
 import com.google.idea.blaze.base.model.LibraryFilesProvider;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
-import com.intellij.openapi.progress.DumbProgressIndicator;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.Library.ModifiableModel;
-import com.intellij.openapi.roots.libraries.ui.RootDetector;
-import com.intellij.openapi.roots.ui.configuration.LibrarySourceRootDetectorUtil;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.FileUtilRt;
-import com.intellij.openapi.vfs.JarFileSystem;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.util.io.URLUtil;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Modifies {@link Library} content in {@link Library.ModifiableModel}.
@@ -66,45 +59,9 @@ public class LibraryModifier {
       addRoot(classFileUrl, OrderRootType.CLASSES);
     }
 
-    for (String sourceFileUrl : libraryFilesProvider.getSourceFilesUrls(blazeProjectData)) {
-      detectSourceRoots(sourceFileUrl).forEach(root -> {
-        modifiableModel.addRoot(root, OrderRootType.SOURCES);
-      });
+    for (String sourceFile : libraryFilesProvider.getSourceFilesUrls(blazeProjectData)) {
+      addRoot(sourceFile, OrderRootType.SOURCES);
     }
-  }
-
-  private List<VirtualFile> detectSourceRoots(String sourceJar) {
-    List<VirtualFile> roots = new ArrayList<>();
-
-    if (sourceJar == null) {
-      return roots;
-    }
-
-    VirtualFile srcFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(sourceJar);
-    if (srcFile == null) {
-      return roots;
-    }
-
-    VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(srcFile);
-    if (jarRoot == null) {
-      return roots;
-    }
-
-    List<RootDetector> detectors = LibrarySourceRootDetectorUtil.JAVA_SOURCE_ROOT_DETECTOR
-        .getExtensionList();
-
-    return detect(detectors, jarRoot);
-  }
-
-  private List<VirtualFile> detect(List<RootDetector> detectors, VirtualFile jarRoot) {
-    List<VirtualFile> roots = new ArrayList<>();
-
-    for (RootDetector detector : detectors) {
-      DumbProgressIndicator progressIndicator = new DumbProgressIndicator();
-      roots.addAll(detector.detectRoots(jarRoot, progressIndicator));
-    }
-
-    return roots;
   }
 
   private ModifiableModel getLibraryModifiableModel(
