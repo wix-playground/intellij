@@ -66,21 +66,21 @@ public class LibraryModifier {
       addRoot(classFileUrl, OrderRootType.CLASSES);
     }
 
-    for (String sourceFileUrl : libraryFilesProvider.getSourceFilesUrls(blazeProjectData)) {
-      detectSourceRoots(sourceFileUrl).forEach(root -> {
+    for (File sourceFile : libraryFilesProvider.getSourceFiles(blazeProjectData)) {
+      detectSourceRoots(sourceFile).forEach(root -> {
         modifiableModel.addRoot(root, OrderRootType.SOURCES);
       });
     }
   }
 
-  private List<VirtualFile> detectSourceRoots(String sourceJar) {
-    List<VirtualFile> roots = new ArrayList<>();
+  private List<VirtualFile> detectSourceRoots(File sourceJar) {
 
+    List<VirtualFile> roots = new ArrayList<>();
     if (sourceJar == null) {
       return roots;
     }
 
-    VirtualFile srcFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(sourceJar);
+    VirtualFile srcFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(sourceJar.getAbsolutePath());
     if (srcFile == null) {
       return roots;
     }
