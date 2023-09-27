@@ -188,7 +188,8 @@ public class BlazeIntellijPluginConfiguration extends LocatableConfigurationBase
       throw new ExecutionException("No sandbox specified for IntelliJ Platform Plugin SDK", e);
     }
     String buildNumber = IdeaJdkHelper.getBuildNumber(ideaJdk);
-    final BlazeIntellijPluginDeployer deployer = new BlazeIntellijPluginDeployer(sandboxHome);
+    final BlazeIntellijPluginDeployer deployer =
+        new BlazeIntellijPluginDeployer(sandboxHome, target);
     env.putUserData(BlazeIntellijPluginDeployer.USER_DATA_KEY, deployer);
 
     // copy license from running instance of idea
@@ -197,7 +198,7 @@ public class BlazeIntellijPluginConfiguration extends LocatableConfigurationBase
     return new JavaCommandLineState(env) {
       @Override
       protected JavaParameters createJavaParameters() throws ExecutionException {
-        DeployedPluginInfo deployedPluginInfo = deployer.deployNonBlocking(buildSystem);
+        DeployedPluginInfo deployedPluginInfo = deployer.deployNonBlocking();
 
         final JavaParameters params = new JavaParameters();
 
