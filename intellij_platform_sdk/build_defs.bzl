@@ -636,4 +636,7 @@ def select_for_channel(channel_map):
             for direct_product, indirect_product in inverse_ij_products.items()
         },
     )
+
+    select_map.update({"//conditions:default": [":stable"]})
+    
     return select(select_map)
