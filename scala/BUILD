@@ -39,6 +39,7 @@ java_library(
         "//proto:proto_deps",
         "//sdkcompat",
         "//third_party/scala",
+        "@bsp4j//:bsp4j",
     ],
 )
 

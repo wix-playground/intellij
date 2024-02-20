@@ -1020,6 +1020,14 @@ jvm_maven_import_external(
 )
 
 jvm_maven_import_external(
+    name = "bsp4j",
+    artifact = "ch.epfl.scala:bsp4j:2.1.0-M3",
+    artifact_sha256 = "e320c4785e9d2b3f5e5d29af1a8390cfd33a14c2b97ebabc971d2de17f5ec82f",
+    licenses = ["notice"],  # Apache 2.0
+    server_urls = ["https://repo1.maven.org/maven2"],
+)
+
+jvm_maven_import_external(
     name = "io_netty_netty_transport_native_unix_common",
     artifact = "io.netty:netty-transport-native-unix-common:4.1.96.Final",
     artifact_sha256 = "4f96297a06a544a4cdb6fe6af8b868640f100fa96969e2196be216bd41adef13",
