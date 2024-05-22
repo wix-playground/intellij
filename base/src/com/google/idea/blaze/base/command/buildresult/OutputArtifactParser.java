@@ -75,6 +75,8 @@ public interface OutputArtifactParser {
       BuildEventStreamProtos.File file, String configurationMnemonic) {
     List<String> pathPrefixList = file.getPathPrefixList();
     if (pathPrefixList.size() <= 1) {
+        if (file.getUri().contains("/external/"))
+            return file.getUri().substring(file.getUri().indexOf("/external/"));
       // fall back to using the configuration mnemonic
       // TODO(brendandouglas): remove this backwards compatibility code after September 2019
       return configurationMnemonic + "/" + file.getName();
