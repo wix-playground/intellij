@@ -21,7 +21,7 @@ jobs:
       - name: run bazel
         continue-on-error: ${{ matrix.experimental }}
         run: >
-          bazel test //:ijwb_ce_tests
+          pwd && bazel test //:ijwb_ce_tests
           --repository_cache=~/.bazel-repository-cache
           --define=ij_product=${{ matrix.ij_product }}
           --keep_going
