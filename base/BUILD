@@ -28,10 +28,7 @@ java_library(
 
 kt_jvm_library(
     name = "base",
-    srcs = glob([
-        "src/**/*.java",
-        "src/**/*.kt",
-    ]),
+    srcs = glob(["src/**/*.java", "src/**/*.kt"]),
     resource_jars = [":resources"],
     visibility = PLUGIN_PACKAGES_VISIBILITY,
     deps = [
