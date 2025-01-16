@@ -20,14 +20,19 @@ load(
     "intellij_unit_test_suite",
 )
 
+java_library(
+    name = "resources",
+    resource_strip_prefix = package_name() + "/src",
+    resources = glob(["src/resources/**/*"]),
+)
+
 kt_jvm_library(
     name = "base",
     srcs = glob([
         "src/**/*.java",
         "src/**/*.kt",
     ]),
-    resource_strip_prefix = "base/src",
-    resources = glob(["src/resources/**/*"]),
+    resource_jars = [":resources"],
     visibility = PLUGIN_PACKAGES_VISIBILITY,
     deps = [
         "//aspect:aspect_lib",
