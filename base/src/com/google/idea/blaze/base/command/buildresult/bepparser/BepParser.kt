@@ -142,10 +142,7 @@ private class OutputGroupTargetConfigFileSetMap {
   }
 
   fun setOutputGroupTargetConfig(outputGroup: String, target: String, config: String, fileSetNames: List<String>) {
-    val previous = getOutputGroupTarget(outputGroup, target).put(config, fileSetNames.toList())
-    if (previous != null) {
-      error("$outputGroup:$target:$config already present")
-    }
+    getOutputGroupTarget(outputGroup, target).merge(config, fileSetNames.toList(), { a, b -> a + b })
   }
 
   fun fileSetStream(): Sequence<OutputGroupTargetConfigFileSets> {
