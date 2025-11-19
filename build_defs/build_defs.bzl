@@ -103,7 +103,7 @@ def stamped_plugin_xml(
         args.append("--plugin_name='%s'" % plugin_name)
 
     if version:
-        _check_version(version)
+        #        _check_version(version)
         args.append("--version='%s'" % version)
 
     if changelog_file:

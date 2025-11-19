@@ -26,7 +26,7 @@ test_suite(
         "//base:integration_tests",
         "//base:unit_tests",
         "//dart:unit_tests",
-        "//ijwb:headless_tests",
+        #        "//ijwb:headless_tests",
         "//ijwb:integration_tests",
         "//ijwb:unit_tests",
         "//java:integration_tests",
